@@ -1,0 +1,17 @@
+{
+    "name": "phidias/db",
+    "description": "Phidias database abstraction layer and ORM (for MySQL)",
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "Santiago Cortés",
+            "email": "santiago.cortes@phidias.com"
+        }
+    ],
+
+    "autoload": {
+        "psr-4": {
+            "Phidias\\Db\\": "src/"
+        }
+    }
+}
