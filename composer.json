@@ -13,5 +13,9 @@
         "psr-4": {
             "Phidias\\Db\\": "src/"
         }
-    }
+    },
+
+    "require": {
+        "phidias/utilities-debugger": "^1.0"
+    }    
 }
