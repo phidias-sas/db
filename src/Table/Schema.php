@@ -478,9 +478,9 @@ class Schema
 
 
     //Load from Database
-    public static function load($db, $tableName)
+    public static function load($identifier, $tableName)
     {
-        $db = Db::connect($db);
+        $db = Db::connect($identifier);
 
         try {
             $response = $db->query("DESCRIBE $tableName");
@@ -490,8 +490,9 @@ class Schema
 
         $keys = array();
 
-        $schema = new Schema;
-        $schema->table($tableName);
+        $schema = (new Schema)
+            ->db($identifier)
+            ->table($tableName);
 
         while ($field = $response->fetch_assoc()) {
 

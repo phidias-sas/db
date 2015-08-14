@@ -11,37 +11,37 @@ class Db
     const KEYWORD_NULL    = "@@null@@";
     const KEYWORD_DEFAULT = "@@default@@";
 
-    private static $identifiers         = array();
+    private static $credentials         = array();
     private static $identifierCallbacks = array();
     private static $instances           = array();
 
     private $mysqli;
 
     /**
-     * Configure database access settings
+     * Configure database access credentials
      *
      * Default connection settings:
      *
-     * Db::configure(array(
+     * Db::configure([
      *     "host"     => $host,
      *     "username" => $username,
      *     "password" => $password,
      *     "database" => $database,
      *     "charset"  => $charset
-     * ))
+     * ]);
      *
      * $db = Db::connect();
      *
      *
      * Connection identifier:
      *
-     * Db::configure("test", array(
+     * Db::configure("test", [
      *     "host"     => $host,
      *     "username" => $username,
      *     "password" => $password,
      *     "database" => $database,
      *     "charset"  => $charset
-     * ))
+     * ]);
      *
      * $test = Db::connect("test");
      *
@@ -50,9 +50,11 @@ class Db
      *
      * Db::configure(function getIdentifierData($identifier) {
      *     echo "Looking for identifier $identifier";
-     *     return array(
-     *         "host" => ....
-     *     )
+     *     return [
+     *         "host"     => ...
+     *         "username" => ...
+     *         "password" => ...
+     *     ]
      * });
      *
      * $db = Db::connect();
@@ -62,42 +64,25 @@ class Db
      * > Looking for identifier "me"
      *
      */
-    public static function configure($identifier, $data = null)
+    public static function configure($identifier, $credentials = null)
     {
         if (is_array($identifier)) {
-            self::$identifiers["%%default"] = self::sanitizeConnectionSettings($identifier);
+            self::$credentials[self::KEYWORD_DEFAULT] = self::sanitizeCredentialsArray($identifier);
             return;
         }
 
         if ($identifier === null) {
-            $identifier = "%%default";
+            $identifier = self::KEYWORD_DEFAULT;
         }
 
-        if (is_array($data)) {
-            self::$identifiers[$identifier] = self::sanitizeConnectionSettings($data);
+        if (is_array($credentials)) {
+            self::$credentials[$identifier] = self::sanitizeCredentialsArray($credentials);
             return;
         }
 
         if (is_callable($identifier)) {
             self::$identifierCallbacks[] = $identifier;
         }
-    }
-
-    private static function sanitizeConnectionSettings($data)
-    {
-        $data = (array) $data;
-
-        $host     = isset($data["host"])     ? $data["host"]     : null;
-        $username = isset($data["username"]) ? $data["username"] : null;
-        $password = isset($data["password"]) ? $data["password"] : null;
-        $database = isset($data["database"]) ? $data["database"] : null;
-        $charset  = isset($data["charset"])  ? $data["charset"]  : "utf8";
-
-        if ($host === null) {
-            throw new Exception($data, "invalid connection settings");
-        }
-
-        return array($host, $username, $password, $database, $charset);
     }
 
     /**
@@ -124,61 +109,10 @@ class Db
      *
      * @return Db Db instance
      */
-    public static function connect($settings = null)
+    public static function connect($identifier = null)
     {
-        if (is_array($settings)) {
-
-            try {
-
-                list($host, $username, $password, $database, $charset) = self::sanitizeConnectionSettings($settings);
-
-                $identifier = md5("$host,$username,$password,$database,$charset");
-
-                if (isset(self::$instances[$identifier])) {
-                    return self::$instances[$identifier];
-                }
-
-            } catch (\Exception $e) {
-
-                if (isset($settings["password"])) {
-                    $settings["password"] = "******";
-                }
-
-                throw new Exception\CannotConnect($settings, "invalid connection settings");
-
-            }
-
-        } else {
-
-            $identifier = $settings === null ? "%%default" : $settings;
-
-            if (isset(self::$instances[$identifier])) {
-                return self::$instances[$identifier];
-            }
-
-            if (isset(self::$identifiers[$identifier])) {
-                list($host, $username, $password, $database, $charset) = self::$identifiers[$identifier];
-            } else {
-
-                $foundValidSettings = false;
-
-                foreach (self::$identifierCallbacks as $callback) {
-                    try {
-                        list($host, $username, $password, $database, $charset) = self::sanitizeConnectionSettings(call_user_func($callback, $settings));
-                        $foundValidSettings = true;
-                        break;
-                    } catch (\Exception $e) {
-                        $foundValidSettings = false;
-                    }
-                }
-
-                if (!$foundValidSettings) {
-                    throw new Exception\CannotConnect($settings, "no connection settings found");
-                }
-
-            }
-
-        }
+        $credentials = self::getCredentials($identifier);
+        list($host, $username, $password, $database, $charset) = array_values($credentials);
 
         Debug::startBlock("connecting to Db: $username:*******@$host/$database", 'SQL');
 
@@ -205,6 +139,89 @@ class Db
         return self::$instances[$identifier];
     }
 
+    /**
+     * Create the database (if not exists) defined for the given identifier
+     * 
+     */
+    public static function create($identifier = null, $collation = "utf8_general_ci")
+    {
+        $credentials = self::getCredentials($identifier);
+
+        list($host, $username, $password, $database, $charset) = array_values($credentials);
+
+        Debug::startBlock("attempting to create database: $username:*******@$host/$database", 'SQL');
+
+        $mysqli = mysqli_init();
+        if (!$mysqli) {
+            die('mysqli_init failed');
+        }
+
+        if (!$mysqli->real_connect($host, $username, $password)) {
+            throw new Exception\CannotConnect(null, mysqli_connect_error());
+        }
+
+        if ($charset !== null) {
+            $mysqli->set_charset($charset);
+        }
+
+        $query = "CREATE DATABASE IF NOT EXISTS `$database` DEFAULT CHARACTER SET $charset COLLATE $collation";
+
+        if (! $mysqli->query($query)) {
+            throw self::obtainException($mysqli->errno, $mysqli->error, $query);
+        }
+
+        Debug::endBlock();
+    }
+
+
+    private static function getCredentials($identifier)
+    {
+        $identifierKey = $identifier === null ? self::KEYWORD_DEFAULT : $identifier;
+
+        if (isset(self::$credentials[$identifierKey])) {
+            return self::$credentials[$identifierKey];
+        }
+
+        $foundValidCredentials = false;
+
+        foreach (self::$identifierCallbacks as $callback) {
+
+            try {
+                return self::sanitizeCredentialsArray(call_user_func($callback, $identifier));
+            } catch (\Exception $e) {
+                // continue
+            }
+
+        }
+
+        throw new Exception($identifier, "no connection settings found");
+    }
+
+
+    private static function sanitizeCredentialsArray($array)
+    {
+        if (!is_array($array)) {
+            throw new Exception($array, "invalid connection settings");
+        }
+
+        $retval = [
+            "host"     => isset($array["host"])     ? $array["host"]     : null,
+            "username" => isset($array["username"]) ? $array["username"] : null,
+            "password" => isset($array["password"]) ? $array["password"] : null,
+            "database" => isset($array["database"]) ? $array["database"] : null,
+            "charset"  => isset($array["charset"])  ? $array["charset"]  : "utf8"
+        ];
+
+        if ($retval["host"] === null) {
+            $retval["password"] = "******";
+            throw new Exception($retval, "invalid connection settings");
+        }
+
+        return $retval;
+    }
+
+
+
     public function __construct($mysqli)
     {
         $this->mysqli = $mysqli;
@@ -212,19 +229,19 @@ class Db
 
     public function beginTransaction()
     {
-        $this->mysqli->autocommit(FALSE);
+        $this->mysqli->autocommit(false);
     }
 
     public function commit()
     {
         $this->mysqli->commit();
-        $this->mysqli->autocommit(TRUE);
+        $this->mysqli->autocommit(true);
     }
 
     public function rollback()
     {
         $this->mysqli->rollback();
-        $this->mysqli->autocommit(TRUE);
+        $this->mysqli->autocommit(true);
     }
 
     public function getNextInsertID($tableName)
@@ -277,7 +294,7 @@ class Db
         Debug::endBlock();
 
         if ($result === false) {
-            throw $this->obtainException($this->mysqli->errno, $this->mysqli->error, $query);
+            throw self::obtainException($this->mysqli->errno, $this->mysqli->error, $query);
         }
 
         return $result;
@@ -524,7 +541,7 @@ class Db
      * http://dev.mysql.com/doc/refman/5.5/en/error-messages-server.html
      *
      */
-    private function obtainException($errno, $error, $query = null)
+    private static function obtainException($errno, $error, $query = null)
     {
         switch ($errno) {
 

@@ -4,7 +4,7 @@ class Reflection
 {
 	public static function getEntities($folder)
 	{
-		$classNames = array();
+		$classnames = array();
 
         $librariesFolder = new \RecursiveDirectoryIterator($folder);
         $iterator        = new \RecursiveIteratorIterator($librariesFolder);
@@ -13,16 +13,20 @@ class Reflection
         foreach ($files as $file) {
 
             $filename  = $file[0];
-            $className = str_replace(array($folder, ".php", "/"), array("", "", "\\"), $filename);
+            $classname = self::getClassName($filename);
 
-            if (!class_exists($className)) {
+            if ($classname === null) {
+                continue;
+            }
+
+            if (!class_exists($classname)) {
                 include $filename;
             }
 
-            $classNames[] = $className;
+            $classnames[] = $classname;
         }
 
-        return self::organize($classNames);
+        return self::organize($classnames);
 	}
 
     private static function organize($classnames, &$organized = array(), &$checking = array())
@@ -52,5 +56,28 @@ class Reflection
         }
 
         return $organized;
+    }
+
+    private static function getClassName($filename)
+    {
+        $contents = file_get_contents($filename);
+
+        $matches = [];
+        preg_match("/namespace (.+);/", $contents, $matches);
+        if (!isset($matches[1])) {
+            return;
+        }
+
+        $namespace = $matches[1];
+
+        $matches = [];
+        preg_match("/class ([^ {]+)/", $contents, $matches);
+        if (!isset($matches[1])) {
+            return;
+        }
+
+        $classname = $matches[1];
+
+        return "$namespace\\$classname";
     }
 }
