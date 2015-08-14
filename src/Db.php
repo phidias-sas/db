@@ -339,7 +339,7 @@ class Db
         } elseif ($value === self::KEYWORD_DEFAULT) {
             return "default";
 
-        } elseif (is_numeric($value) && strpos(strtolower($value), 'e') === false) { //PHP will say "937e3019763158166689073439699767" IS numeric (!!!)
+        } elseif (is_int($value) || is_float($value)) {
 
             return $value;
 
