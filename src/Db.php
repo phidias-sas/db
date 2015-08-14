@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Phidias\Db;
 
 use Phidias\Utilities\Debugger as Debug;
@@ -141,7 +141,7 @@ class Db
 
     /**
      * Create the database (if not exists) defined for the given identifier
-     * 
+     *
      */
     public static function create($identifier = null, $collation = "utf8_general_ci")
     {
@@ -334,9 +334,11 @@ class Db
     private function sanitizeValue($value)
     {
         if ($value === self::KEYWORD_NULL) {
+
             return "NULL";
 
         } elseif ($value === self::KEYWORD_DEFAULT) {
+
             return "default";
 
         } elseif (is_int($value) || is_float($value)) {
@@ -344,12 +346,15 @@ class Db
             return $value;
 
         } elseif (is_string($value)) {
+
             return "'".$this->escapeString($value)."'";
 
         } elseif (is_null($value)) {
+
             return 'NULL';
 
         } elseif (is_bool($value)) {
+
             return $value ? 1 : 0;
 
         } elseif (is_array($value)) {
