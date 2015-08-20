@@ -16,6 +16,6 @@
     },
 
     "require": {
-        "phidias/utilities-debugger": "^1.0"
+        "phidias/utilities-debugger": "*"
     }    
 }
