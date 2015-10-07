@@ -1,8 +1,6 @@
 <?php
 namespace Phidias\Db\Orm\Scaffold;
 
-use Phidias\Filesystem;
-
 class Entity
 {
     private $db;
@@ -54,7 +52,7 @@ class Entity
         }
 
         $output .= "\n";
-        $output .= "    protected static \$schema = array(\n";
+        $output .= "    protected static \$schema = [\n";
         $output .= "\n";
 
         if ($this->db) {
@@ -62,9 +60,9 @@ class Entity
         }
 
         $output .= "        'table' => '$this->table',\n";
-        $output .= "        'keys' => array('".implode("', '", $keyAttributes)."'),\n";
+        $output .= "        'keys' => ['".implode("', '", $keyAttributes)."'],\n";
         $output .= "\n";
-        $output .= "        'attributes' => array(\n\n";
+        $output .= "        'attributes' => [\n\n";
 
         foreach ($this->attributes as $attributeName => $attributeData) {
 
@@ -78,7 +76,7 @@ class Entity
                 $length = $matches[2][0];
             }
 
-            $output .= "            '$attributeName' => array(\n";
+            $output .= "            '$attributeName' => [\n";
             $output .= "                'type' => '$type',\n";
             if ($length) {
                 $output .= "                'length' => $length,\n";
@@ -92,15 +90,20 @@ class Entity
                 $output .= "                'default' => '{$attributeData['Default']}',\n";
             }
 
-            $output .= "            ),\n\n";
+            $output .= "            ],\n\n";
 
         }
-        $output .= "        )\n";
+        $output .= "        ]\n";
 
-        $output .= "    );\n";
+        $output .= "    ];\n";
 
         $output .= "}";
 
-        Filesystem::putContents($filename, $output);
+
+        if (!is_dir(dirname($filename))) {
+            mkdir(dirname($filename), 0777, true);
+        }
+
+        file_put_contents($filename, $output);
     }
 }
