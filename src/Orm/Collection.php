@@ -80,7 +80,7 @@ class Collection
         $this->filters       = array();
 
         $this->pile          = array();
-        $this->maxPileSize   = 10000;
+        $this->maxPileSize   = 5000;
         $this->insertCount   = 0;
 
         $this->updateValues  = array();
