@@ -321,7 +321,7 @@ class Collection
 
     //Query ordering functions
 
-    public function orderBy($attribute, $descending = false)
+    public function orderBy($attribute, $descending = false, $priorize = false)
     {
         $targetCollection = $this;
         $parts            = explode(".", $attribute);
@@ -343,12 +343,12 @@ class Collection
             return $this;
         }
 
-        $sortString = $descending ? 'DESC' : 'ASC';
+        $orderString = $descending ? 'DESC' : 'ASC';
 
-        return $this->order("$attribute $sortString");
+        return $this->order("$attribute $orderString", null, $priorize);
     }
 
-    public function order($order = null, $parameters = null)
+    public function order($order = null, $parameters = null, $priorize = false)
     {
         if ($order === null) {
             $this->orderBy = array();
@@ -356,7 +356,13 @@ class Collection
             return $this;
         }
 
-        $this->orderBy[] = $parameters ? $this->db->bindParameters($order, $parameters) : $order;
+        $orderString = $parameters ? $this->db->bindParameters($order, $parameters) : $order;
+
+        if ($priorize) {
+            array_unshift($this->orderBy, $orderString);
+        } else {
+            array_push($this->orderBy, $orderString);
+        }
 
         return $this;
     }
