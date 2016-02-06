@@ -774,7 +774,7 @@ class Collection
         $result = $this->find()->first();
 
         if ($result === null) {
-            throw new Exception\EntityNotFound($targetKey);
+            throw new Exception\EntityNotFound($targetKey, "No records for key ".json_encode($targetKey));
         }
 
         return $result;
