@@ -174,7 +174,7 @@ class Db
     }
 
 
-    private static function getCredentials($identifier)
+    public static function getCredentials($identifier)
     {
         $identifierKey = $identifier === null ? self::KEYWORD_DEFAULT : $identifier;
 
