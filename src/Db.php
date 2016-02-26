@@ -111,6 +111,10 @@ class Db
      */
     public static function connect($identifier = null)
     {
+        if (isset(self::$instances[$identifier])) {
+            return self::$instances[$identifier];
+        }
+
         $credentials = self::getCredentials($identifier);
         list($host, $username, $password, $database, $charset) = array_values($credentials);
 
