@@ -834,8 +834,8 @@ class Collection
 
             foreach ($this->schema->getAttributes() as $attributeName => $attributeData) {
                 $columnName = $attributeData["column"];
-                if (isset($lastRow[$columnName])) {
-                    $entity->$attributeName = $lastRow[$columnName];
+                if (isset($lastRow[$columnName]) && $lastRow[$columnName] != DB::KEYWORD_DEFAULT) {
+                    $entity->$attributeName = $lastRow[$columnName] == DB::KEYWORD_NULL ? null : $lastRow[$columnName];
                 } elseif ($this->schema->isAutoIncrement($attributeName)) {
                     $entity->$attributeName = $this->getLastInsertID();
                 }
