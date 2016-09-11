@@ -123,13 +123,13 @@ class Entity
 
             foreach (get_object_vars($attributesObject) as $attributeName => $value) {
 
-                if ($value === null || !$schema->hasAttribute($attributeName)) {
+                if (!$schema->hasAttribute($attributeName)) {
                     continue;
                 }
 
                 if (is_a($value, "Phidias\Db\Orm\Entity")) {
                     $collection->attribute($attributeName, $value::collection($value));
-                } elseif (is_scalar($value)) {
+                } elseif (is_scalar($value) || is_null($value)) {
                     $collection->attribute($attributeName);
                 }
             }
