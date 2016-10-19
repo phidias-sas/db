@@ -1,94 +1,97 @@
 <?php namespace Phidias\Db\Orm\Import;
 
 /**
- * The import map is an utility to insert large sets of data entities
- * (e.g. craete entities from a .CSV file)
- *
- * Usage:
- *
- * source.csv:
- * id, firstName, father_id, father_firstName, father_lastName
- * 1,        foo,         2,              foo,             foo
- * 3,       shoo,         4,             shoo,            shoo
- * .... large number of rows
- *
- *
- * $map = new Map;
- *
- *
- * $map->target("father")
- *         ->className("Phidias\Core\Person\Entity")
- *         ->attribute("gender",     1)
- *         ->attribute("id",        "col:2", true)
- *         ->attribute("firstName", "col:3")
- *         ->attribute("lastName",  "col:4");
- *
- * $map->target("student")
- *         ->className("Phidias\Core\Person\Entity")
- *         ->attribute("id",        "col:0", true)
- *         ->attribute("firstName", "col:1")
- *         ->attribute("lastName",  "#father.lastName");
- *
- * $map->target("fatherRelation")
- *         ->className("Phidias\Core\Person\Relation\Entity")
- *         ->attribute("person",   "#student.id")
- *         ->attribute("relative", "#father.id")
- *         ->attribute("role",     1);
- *
- *
- *
- * foreach ($row in $importedCsvOrWhatever) {
- *     $createdEntities = $map->import($row);
- *
- *     echo "Father set for student ".$createdEntities["student"]->id;
- * }
+The import map is an utility to import large sets of data into entities
+(e.g. create or update entities from a .CSV file)
+
+Usage:
+
+source.csv:
+
+id, firstName, father_id, father_firstName, father_lastName
+1,        foo,         2,              foo,             foo
+3,       shoo,         4,             shoo,            shoo
+.... large number of rows
+
+
+$map = new Map;
+
+$map->entity("person")
+    ->className("Phidias\Core\Person\Entity")
+    ->attribute("document",    "column", 0, true)
+    ->attribute("gender",      "value",  "male")
+    ->attribute("firstName",   "column", 1)
+    ->attribute("lastName",    "column", 2)
+    ->attribute("description", "value",  "bla bla bla")
+
+    ->attribute(<name of the entity's attribute>, <source: value, column, or reference>,  <value (as interpreted according to the source)>,  <is key>)
+
+$map->entity("son")
+    ->className("Phidias\Core\Person\Entity")
+    ->attribute("document",  "column",    3, true)
+    ->attribute("firstName", "column",    4)
+    ->attribute("lastName",  "reference", "person.lastName");
+
+$map->entity("fatherRelation")
+    ->className("Phidias\Core\Person\Relation\Entity")
+    ->attribute("person",   "reference", "person.id")
+    ->attribute("relative", "reference", "son.id")
+    ->attribute("role",     "value",     "child");
+
+
+$record = [111, "Alfredo", "Cortes", 222, "Santiago"];
+
+$map->import($record);
+
+
+
+foreach ($record in $importedCsvOrWhatever) {
+  $createdEntities = $map->import($record);
+
+  echo "Father set for student ".$createdEntities["student"]->id;
+}
  *
  */
 
 class Map
 {
-    private $targets;
+    private $entities;
+    public $resolved;
 
     public function __construct()
     {
-        $this->targets = array();
+        $this->entities = [];
     }
 
-    public function addTarget(Target $target)
+    public function addEntity(Entity $entity)
     {
-        $target->map($this);
-        $this->targets[$target->getId()] = $target;
-
+        $this->entities[$entity->getId()] = $entity;
         return $this;
     }
 
-    public function target($targetId)
+    public function entity($entityId)
     {
-        $target = new Target($targetId);
-        $this->addTarget($target);
+        $entity = new Entity($entityId);
+        $this->addEntity($entity);
 
-        return $target;
+        return $entity;
     }
 
-    public function getTarget($targetId)
+    public function getEntity($entityId)
     {
-        if (!isset($this->targets[$targetId])) {
-            throw new \Exception("import target '$targetId' not found");
+        if (!isset($this->entities[$entityId])) {
+            throw new \Exception("entity '$entityId' not found in import map");
         }
 
-        return $this->targets[$targetId];
+        return $this->entities[$entityId];
     }
 
-    public function import($row)
+    public function import($record)
     {
-        $resolved = array();
-
-        foreach ($this->targets as $target) {
-            $target->resolve($row, $resolved);
+        $this->resolved = [];
+        foreach ($this->entities as $entity) {
+            $entity->resolve($record, $this);
         }
-
-        return $resolved;
+        return $this->resolved;
     }
-
 }
-
