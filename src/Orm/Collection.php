@@ -545,15 +545,13 @@ class Collection
         if ($relatedAttribute === null) {
 
             $outgoingRelations = $this->schema->getForeignKeys($foreignTable);
-            if (count($outgoingRelations) == 1) {
-                $relationNames           = array_keys($outgoingRelations);
-                $relatedAttribute        = array_pop($relationNames);
+            if ($outgoingRelations) {
+                $relatedAttribute        = array_keys($outgoingRelations)[0];
                 $relatedAttributeIsLocal = true;
             } else {
                 $incomingRelations = $collection->schema->getForeignKeys($localTable);
-                if (count($incomingRelations) == 1) {
-                    $relationNames           = array_keys($incomingRelations);
-                    $relatedAttribute        = array_pop($relationNames);
+                if ($incomingRelations) {
+                    $relatedAttribute        = array_keys($incomingRelations)[0];
                     $relatedAttributeIsLocal = false;
                 }
             }
