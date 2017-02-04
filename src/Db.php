@@ -337,7 +337,7 @@ class Db
      */
     private function sanitizeValue($value)
     {
-        if ($value === self::KEYWORD_NULL) {
+        if ($value === self::KEYWORD_NULL || is_null($value)) {
 
             return "NULL";
 
@@ -351,11 +351,11 @@ class Db
 
         } elseif (is_string($value)) {
 
+            if ($value[0] == '`' && $value[strlen($value) - 1] == '`') {
+                return substr($value, 1, -1);
+            }
+
             return "'".$this->escapeString($value)."'";
-
-        } elseif (is_null($value)) {
-
-            return 'NULL';
 
         } elseif (is_bool($value)) {
 

@@ -381,6 +381,55 @@ class Collection
         return $this;
     }
 
+
+    /*
+    Experimental limit functions for correct limiting
+    unique columns in joined sets
+    */
+    public function limitDistinct($limit, $offset = null)
+    {
+        $keyName = $this->schema->getKeys()[0];
+
+        $clone = clone($this);
+        $clone->_removeNonessentialJoins();
+        $clone->_clearAttributes();
+        $clone->attribute($keyName, "DISTINCT($keyName)");
+
+        $subQuery = $clone->getQuery(null, false);
+        $offset ? $subQuery->limit($offset, $limit) : $subQuery->limit($limit);   //DB/Query ->limit() takes argument in the same order as MySQL's LIMIT statement
+
+        $subQuerySQL = $subQuery->toSQL();
+
+        // This is the only way to allow a LIMIT in the subquery.
+        // see: http://stackoverflow.com/questions/7124418/mysql-subquery-limit
+        return $this->where("$keyName IN (SELECT * FROM ($subQuerySQL) as t)");
+    }
+
+    private function _clearAttributes()
+    {
+        $this->attributes = [];
+        foreach ($this->joins as $join) {
+            $join["collection"]->_clearAttributes();
+        }
+        return $this;
+    }
+
+    // removes all joins not relevant to filtering the query results
+    // i.e. joins not relevant to the WHERE, GROUP BY or HAVING clauses of the final query
+    private function _removeNonessentialJoins()
+    {
+        $uses = implode(' ', array_merge($this->where, $this->groupBy, $this->having));
+
+        foreach (array_keys($this->joins) as $joinName) {
+            if (strpos($uses, $joinName.'.') === false ) {  // this join is not used to filter the query
+                unset($this->joins[$joinName]);
+            }
+        }
+
+        return $this;
+    }
+
+
     //built in paging
     public function limit($limit)
     {
@@ -622,7 +671,7 @@ class Collection
         return preg_replace($patterns, $replacements, $string);
     }
 
-    public function getQuery($aliasMap = null)
+    public function getQuery($aliasMap = null, $forceSelectKeys = true)
     {
         if ($aliasMap === null) {
             $aliasMap = $this->buildAliasMap();
@@ -634,9 +683,10 @@ class Collection
 
         $query      = new Query($tableName, $tableAlias);
 
-        //Always select keys
-        foreach ($this->schema->getKeys() as $keyAttributeName) {
-            $query->field($fieldPrefix.$keyAttributeName, "`{$tableAlias}`.".$this->schema->getColumn($keyAttributeName));
+        if ($forceSelectKeys) {
+            foreach ($this->schema->getKeys() as $keyAttributeName) {
+                $query->field($fieldPrefix.$keyAttributeName, "`{$tableAlias}`.".$this->schema->getColumn($keyAttributeName));
+            }
         }
 
         //Select working attributes
@@ -677,7 +727,7 @@ class Collection
 
             $nestedCollection        = clone($joinData["collection"]);
             $nestedCollection->where = array();
-            $nestedQuery             = $nestedCollection->getQuery($aliasMap);
+            $nestedQuery             = $nestedCollection->getQuery($aliasMap, $forceSelectKeys);
 
             $query->join($joinType, $nestedQuery, $conditions);
         }
