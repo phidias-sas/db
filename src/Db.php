@@ -351,6 +351,10 @@ class Db
 
         } elseif (is_string($value)) {
 
+            if ($value == '') {
+                return "''";
+            }
+
             if ($value[0] == '`' && $value[strlen($value) - 1] == '`') {
                 return substr($value, 1, -1);
             }
