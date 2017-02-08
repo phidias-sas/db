@@ -390,7 +390,7 @@ class Collection
     {
         $keyName = $this->schema->getKeys()[0];
 
-        $clone = clone($this);
+        $clone = $this->_clone();
         $clone->_removeNonessentialJoins();
         $clone->_clearAttributes();
         $clone->attribute($keyName, "DISTINCT($keyName)");
@@ -403,6 +403,15 @@ class Collection
         // This is the only way to allow a LIMIT in the subquery.
         // see: http://stackoverflow.com/questions/7124418/mysql-subquery-limit
         return $this->where("$keyName IN (SELECT * FROM ($subQuerySQL) as t)");
+    }
+
+    private function _clone()
+    {
+        $retval = clone($this);
+        foreach ($this->joins as $key => $join) {
+            $this->joins[$key]["collection"] = $join["collection"]->_clone();
+        }
+        return $retval;
     }
 
     private function _clearAttributes()
