@@ -158,7 +158,7 @@ class Entity
     public function setValues($values, $acceptedAttributes = null)
     {
         if (!is_array($values) && !is_object($values)) {
-            return;
+            return $this;
         }
 
         $schema = self::getSchema();
@@ -180,8 +180,9 @@ class Entity
             } else {
                 $this->$attribute = $value;
             }
-
         }
+
+        return $this;
     }
 
     public function fetchAll()
