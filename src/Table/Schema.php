@@ -648,7 +648,6 @@ class Schema
 
         foreach ($this->attributes as $attributeName => $attributeData) {
             if (!isset($targetSchema->attributes[$attributeName])) {
-                //dump("ALTER TABLE `$this->table` DROP `$attributeName`");
                 $db->query("ALTER TABLE `$this->table` DROP `$attributeName`");
             }
         }
@@ -671,9 +670,8 @@ class Schema
 
             if (!isset($this->attributes[$attributeName])) {
                 $positionString = $previousAttribute == null ? "FIRST" : "AFTER `$previousAttribute`";
-                //dump("ALTER TABLE `$this->table` ADD `$attributeName` $typeString $unsignedString $nullString $defaultString $incrementString $positionString;");
                 $db->query("ALTER TABLE `$this->table` ADD `$attributeName` $typeString $unsignedString $nullString $defaultString $incrementString $positionString;");
-                break;
+                continue;
             }
 
             $isDifferent = false;
@@ -689,14 +687,12 @@ class Schema
                 }
 
                 if (isset($this->attributes[$attributeName][$property]) && $this->attributes[$attributeName][$property] != $value) {
-                    //dump("$attributeName:$property is {$this->attributes[$attributeName][$property]} but expected $value");
                     $isDifferent = true;
                     break;
                 }
             }
 
             if ($isDifferent) {
-                //dump("ALTER TABLE `$this->table` CHANGE `$attributeName` `$attributeName` $typeString $unsignedString $nullString $defaultString $incrementString;");
                 $db->query("ALTER TABLE `$this->table` CHANGE `$attributeName` `$attributeName` $typeString $unsignedString $nullString $defaultString $incrementString;");
             }
 
