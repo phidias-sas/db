@@ -1121,9 +1121,9 @@ class Collection
             }
         }
 
-        if (isset($conditions->self)) {
+        if (isset($conditions->fields)) {
             $hasConditions = true;
-            $this->match($conditions->self);
+            $this->match($conditions->fields);
         }
 
         foreach ($conditions as $property => $arguments) {
