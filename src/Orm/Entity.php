@@ -109,6 +109,17 @@ use Phidias\Db\Iterator;
 class Entity
 {
     protected static $schema;
+    protected static $customConditions = [];
+
+    public static function defineCondition($name, $callback)
+    {
+        if (!is_callable($callback)) {
+            trigger_error("defineCondition: invalid callback for '$name'", E_USER_ERROR);
+        }
+
+        $className = get_called_class();
+        $className::$customConditions[$name] = $callback;
+    }
 
     public static function collection($attributesObject = null)
     {
@@ -117,6 +128,7 @@ class Entity
 
         $collection = new Collection($schema);
         $collection->className($className);
+        $collection->setCustomConditions($className::$customConditions);
 
         //Set the collection attributes from the given object
         if ($attributesObject !== null) {
@@ -389,4 +401,5 @@ class Entity
 
         return $schemaObject;
     }
+
 }

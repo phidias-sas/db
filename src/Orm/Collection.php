@@ -28,6 +28,9 @@ class Collection
     private $joinAsInner;
     private $relatedAttribute;
 
+    // User defined condition functions
+    private $customConditions;
+
     //Db connection
     private $db;
 
@@ -42,7 +45,6 @@ class Collection
     private $insertCount;
 
     private $updateValues;
-
     private static $uniqueSequence = 0;
 
     public static function create($schema)
@@ -84,6 +86,8 @@ class Collection
         $this->insertCount   = 0;
 
         $this->updateValues  = array();
+
+        $this->customConditions = array();
     }
 
     public function __destruct()
@@ -184,6 +188,10 @@ class Collection
 
     public function where($condition, $parameters = null)
     {
+        if (!is_string($condition)) {
+            return $this->whereObject($condition);
+        }
+
         $this->where[] = $parameters ? $this->db->bindParameters($condition, $parameters) : $condition;
 
         return $this;
@@ -1082,6 +1090,54 @@ class Collection
 
         //for MySQL:
         //FROM_UNIXTIME(FLOOR( CONV(id, 36, 10) / 10000 ) + 1424445470) as timestamp
+    }
+
+
+    public function setCustomConditions($conditions)
+    {
+        $this->customConditions = $conditions;
+        return $this;
+    }
+
+    public function whereObject($conditions)
+    {
+        if (empty($conditions)) {
+            return $this->where("0");
+        }
+
+        $hasConditions = false;
+
+        if (isset($conditions->or) && count($conditions->or)) {
+            $hasConditions = true;
+            foreach ($conditions->or as $condition) {
+                $this->union((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition));
+            }
+        }
+
+        if (isset($conditions->and) && count($conditions->and)) {
+            $hasConditions = true;
+            foreach ($conditions->and as $condition) {
+                $this->intersect((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition));
+            }
+        }
+
+        if (isset($conditions->self)) {
+            $hasConditions = true;
+            $this->match($conditions->self);
+        }
+
+        foreach ($conditions as $property => $arguments) {
+            if (isset($this->customConditions[$property])) {
+                $hasConditions = true;
+                $this->customConditions[$property]($this, $arguments);
+            }
+        }
+
+        if (!$hasConditions) {
+            $this->where("0");
+        }
+
+        return $this;
     }
 
 }
