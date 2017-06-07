@@ -529,6 +529,26 @@ class Collection
         return $this;
     }
 
+    public function exclude($collection)
+    {
+        $this->consolidateConditions();
+        $collection->consolidateConditions();
+
+        $newConditions = array();
+
+        if ($this->where) {
+            $newConditions[] = '('.implode(' AND ', $this->where).')';
+        }
+
+        if ($collection->where) {
+            $newConditions[] = 'NOT ('.implode(' AND ', $collection->where).')';
+        }
+
+        $this->where = $newConditions;
+
+        return $this;
+    }
+
     private function consolidateConditions()
     {
         foreach ($this->joins as $joinData) {
@@ -1119,6 +1139,10 @@ class Collection
             foreach ($conditions->and as $condition) {
                 $this->intersect((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition));
             }
+        }
+
+        if (isset($conditions->exclude)) {
+            $this->exclude((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($conditions->exclude));
         }
 
         if (isset($conditions->fields)) {
