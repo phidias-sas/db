@@ -188,7 +188,7 @@ class Collection
 
     public function where($condition, $parameters = null)
     {
-        if (!is_string($condition)) {
+        if (!is_scalar($condition)) {
             return $this->whereObject($condition);
         }
 
@@ -1119,42 +1119,45 @@ class Collection
         return $this;
     }
 
-    public function whereObject($conditions)
+    public function whereObject($condition)
     {
-        if (empty($conditions)) {
-            return $this->where("0");
+        if (!isset($condition->type)) {
+            throw new \Exception("Invalid condition ".json_encode($condition));
         }
 
         $hasConditions = false;
 
-        if (isset($conditions->or) && count($conditions->or)) {
-            $hasConditions = true;
-            foreach ($conditions->or as $condition) {
-                $this->union((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition));
-            }
-        }
+        switch ($condition->type) {
+            case "or":
+                foreach ($condition->model as $subCondition) {
+                    $hasConditions = true;
+                    $this->union((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($subCondition));
+                }
+            break;
 
-        if (isset($conditions->and) && count($conditions->and)) {
-            $hasConditions = true;
-            foreach ($conditions->and as $condition) {
-                $this->intersect((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition));
-            }
-        }
+            case "and":
+                foreach ($condition->model as $subCondition) {
+                    $hasConditions = true;
+                    $this->intersect((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($subCondition));
+                }
+            break;
 
-        if (isset($conditions->exclude)) {
-            $this->exclude((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($conditions->exclude));
-        }
-
-        if (isset($conditions->fields)) {
-            $hasConditions = true;
-            $this->match($conditions->fields);
-        }
-
-        foreach ($conditions as $property => $arguments) {
-            if (isset($this->customConditions[$property])) {
+            case "not":
                 $hasConditions = true;
-                $this->customConditions[$property]($this, $arguments);
-            }
+                $this->exclude((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition->model));
+            break;
+
+            case "attributes":
+                $hasConditions = true;
+                $this->match($condition->model);
+            break;
+
+            default:
+                if (isset($this->customConditions[$condition->type])) {
+                    $hasConditions = true;
+                    $this->customConditions[$condition->type]($this, $condition->model);
+                }
+            break;
         }
 
         if (!$hasConditions) {
