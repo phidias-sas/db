@@ -1148,8 +1148,10 @@ class Collection
             break;
 
             case "attributes":
-                $hasConditions = true;
-                $this->match($condition->model);
+                if (!empty($condition->model)) {
+                    $hasConditions = true;
+                    $this->match($condition->model);
+                }
             break;
 
             default:
