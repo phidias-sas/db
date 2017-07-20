@@ -219,6 +219,7 @@ class Collection
             if ($targetArray) {
 
                 if ($mongoOperator === "&between") {
+
                     $this->where("$attributeName BETWEEN :low AND :high", array('low' => $targetArray[0], 'high' => $targetArray[1]));
                 } else {
                     $operator = $mongoOperator == '&nin' ? 'NOT IN' : 'IN';
