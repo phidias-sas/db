@@ -2,7 +2,7 @@
 
 class Operator
 {
-    private static $operators = array('&gt', '&gte', '&lt', '&lte', '&in', '&nin', '&ne', '&eq', '&like', '&or', '&and');
+    private static $operators = array('&gt', '&gte', '&lt', '&lte', '&in', '&nin', '&ne', '&eq', '&like', '&or', '&and', '&between');
 
     public static function isOperator($element)
     {
