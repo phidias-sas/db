@@ -1129,10 +1129,12 @@ class Collection
 
         switch ($condition->type) {
             case "or":
+                $newCollection = (new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions);
                 foreach ($condition->model as $subCondition) {
                     $hasConditions = true;
-                    $this->union((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($subCondition));
+                    $newCollection->union((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($subCondition));
                 }
+                $hasConditions && $this->intersect($newCollection);
             break;
 
             case "and":
