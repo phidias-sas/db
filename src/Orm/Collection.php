@@ -95,6 +95,11 @@ class Collection
         $this->save();
     }
 
+    public function getDb()
+    {
+        return $this->db;
+    }
+
     public function alias($alias)
     {
         $this->alias = $alias;
