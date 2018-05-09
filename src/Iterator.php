@@ -168,8 +168,11 @@ class Iterator implements \Iterator
         $className      = $this->className;
         $returnObject   = new $className;
 
+        $expectedAttributes = [];
+
         foreach ($this->attributes as $attributeName => $sourceField) {
             $returnObject->$attributeName = is_string($sourceField) && isset($this->currentRow[$sourceField]) ? $this->currentRow[$sourceField] : null;
+            $expectedAttributes[$attributeName] = $attributeName;
         }
 
         //Set nested iterators
@@ -184,11 +187,20 @@ class Iterator implements \Iterator
             $nestedIterator->pointerStart = $this->pointer;
 
             $returnObject->$attributeName = $nestedIterator->fetchFirstRow ? $nestedIterator->first() : $nestedIterator;
+
+            $expectedAttributes[$attributeName] = $attributeName;
         }
 
         // Apply filters
         foreach ($this->filters as $filter) {
             call_user_func_array($filter, array($returnObject));
+        }
+
+        // Unset all object properties not specified as iterator attributes
+        foreach ($returnObject as $attr => $value) {
+            if (!isset($expectedAttributes[$attr])) {
+                unset($returnObject->$attr);
+            }
         }
 
         return $returnObject;
