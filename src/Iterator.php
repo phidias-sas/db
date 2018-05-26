@@ -191,16 +191,16 @@ class Iterator implements \Iterator
             $expectedAttributes[$attributeName] = $attributeName;
         }
 
-        // Apply filters
-        foreach ($this->filters as $filter) {
-            call_user_func_array($filter, array($returnObject));
-        }
-
         // Unset all object properties not specified as iterator attributes
         foreach ($returnObject as $attr => $value) {
             if (!isset($expectedAttributes[$attr])) {
                 unset($returnObject->$attr);
             }
+        }
+
+        // Apply filters
+        foreach ($this->filters as $filter) {
+            call_user_func_array($filter, array($returnObject));
         }
 
         return $returnObject;
@@ -248,7 +248,7 @@ class Iterator implements \Iterator
 
         foreach ($this as $object) {
             foreach ($nested as $attributeName) {
-                if (is_a($object->$attributeName, 'Iterator')) {
+                if (isset($object->$attributeName) && is_a($object->$attributeName, 'Iterator')) {
                     $object->$attributeName = $object->$attributeName->fetchAll();
                 }
             }
