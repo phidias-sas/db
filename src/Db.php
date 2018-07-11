@@ -355,7 +355,10 @@ class Db
                 return "''";
             }
 
-            if ($value[0] == '`' && $value[strlen($value) - 1] == '`') {
+            /*
+            Passthroug strings enclosed in backticks (must be at least 3 characters long: `x`, Otherwise values like "`"  or "``" will return an empty string)
+            */
+            if (strlen($value) > 2 && $value[0] == '`' && $value[strlen($value) - 1] == '`') {
                 return substr($value, 1, -1);
             }
 
