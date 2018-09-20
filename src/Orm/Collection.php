@@ -311,11 +311,19 @@ class Collection
 
         $wordConditions = array();
 
-        $words = explode(' ', trim($query));
+        // $words = explode(' ', trim($query));
+        // No partir por espacios en cadenas entre comillas
+        $words = preg_split('/("[^"]*")|\h+/', $query, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE);
+
         foreach ($words as $word) {
             if (!$word = trim($word)) {
                 continue;
             }
+
+            if (substr($word,0,1) == '"') {
+                $word = substr($word,1,-1);
+            }
+
             $word = str_replace('%', '\%', $word);
 
             $matchingConditions = array();
@@ -703,15 +711,33 @@ class Collection
 
     private function translate($string, $aliasMap)
     {
-        $patterns     = array();
-        $replacements = array();
+        // Ignore full strings enclosed between ' OR ` OR "
+        $matches = [];
+        $enclosures = [];
+        preg_match_all('/[\'"`].+?[\'"`]/', $string, $matches);
 
-        foreach ($aliasMap as $source => $target) {
-            $patterns[]     = "/([^a-zA-Z0-9_.`'%]|\A){$source}([^a-zA-Z0-9_.`'%]|\z)/";
-            $replacements[] = "\$1{$target}\$2";
+        if ($matches[0]) {
+            foreach ($matches[0] as $k => $enclosed) {
+                $enclosures["##-$k-##"] = $enclosed;
+            }
+            $string = str_replace($enclosures, array_keys($enclosures), $string);
         }
 
-        return preg_replace($patterns, $replacements, $string);
+        // Replaces all terms from the alias map
+        $patterns     = array();
+        $replacements = array();
+        foreach ($aliasMap as $source => $target) {
+            $patterns[]     = "/([^a-zA-Z0-9_.`']|\A){$source}([^a-zA-Z0-9_.`']|\z)/";
+            $replacements[] = "\$1{$target}\$2";
+        }
+        $retval = preg_replace($patterns, $replacements, $string);
+
+        // Leave enclosures as they were
+        if ($enclosures) {
+            $retval = str_replace(array_keys($enclosures), $enclosures, $retval);
+        }
+
+        return $retval;
     }
 
     public function getQuery($aliasMap = null, $forceSelectKeys = true)
