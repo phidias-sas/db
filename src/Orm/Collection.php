@@ -707,7 +707,7 @@ class Collection
         $replacements = array();
 
         foreach ($aliasMap as $source => $target) {
-            $patterns[]     = "/([^a-zA-Z0-9_.`']|\A){$source}([^a-zA-Z0-9_.`']|\z)/";
+            $patterns[]     = "/([^a-zA-Z0-9_.`'%]|\A){$source}([^a-zA-Z0-9_.`'%]|\z)/";
             $replacements[] = "\$1{$target}\$2";
         }
 
