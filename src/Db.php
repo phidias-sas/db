@@ -143,6 +143,11 @@ class Db
         return self::$instances[$identifier];
     }
 
+    public static function disconnect($identifier = null)
+    {
+        unset(self::$instances[$identifier]);
+    }
+
     /**
      * Create the database (if not exists) defined for the given identifier
      *
