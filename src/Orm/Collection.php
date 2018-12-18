@@ -1153,6 +1153,15 @@ class Collection
 
     public function whereObject($condition)
     {
+        // convert arrays into objects
+        if (is_array($condition) && isset($condition["type"])) {
+            $conditionObj        = new \stdClass;
+            $conditionObj->type  = $condition["type"];
+            $conditionObj->model = isset($condition["model"]) ? $condition["model"]: null;
+
+            $condition = $conditionObj;
+        }
+
         if (!isset($condition->type)) {
             throw new \Exception("Invalid condition ".json_encode($condition));
         }
