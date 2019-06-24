@@ -1132,18 +1132,22 @@ class Collection
     public function getUniqueId()
     {
         $uuid = round( microtime(true) * 10000 ) - 14244454700000 + self::$uniqueSequence++;
+        return base_convert($uuid, 10, 36) . self::getRandomChar() . self::getRandomChar() . self::getRandomChar();
+    }
 
-        return base_convert($uuid, 10, 36);
+    private static function getRandomChar()
+    {
+        $charset = "0123456789abcdefghijklmnopqrstuvwxyz";
+        return $charset[\rand(0, 35)];
     }
 
     public function getUniqueIdTimestamp($uuid)
     {
-        return floor( base_convert($uuid, 36, 10) / 10000 ) + 1424445470;
+        return floor( base_convert( substr($uuid, 0, -3), 36, 10) / 10000 ) + 1424445470;
 
         //for MySQL:
         //FROM_UNIXTIME(FLOOR( CONV(id, 36, 10) / 10000 ) + 1424445470) as timestamp
     }
-
 
     public function setCustomConditions($conditions)
     {
