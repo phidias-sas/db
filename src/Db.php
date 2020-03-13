@@ -111,7 +111,7 @@ class Db
      */
     public static function connect($identifier = null)
     {
-        if (isset(self::$instances[$identifier])) {
+        if (!is_array($identifier) && isset(self::$instances[$identifier])) {
             return self::$instances[$identifier];
         }
 
@@ -137,6 +137,10 @@ class Db
             $mysqli->set_charset($charset);
         }
         Debug::endBlock();
+
+        if (is_array($identifier)) {
+            return new Db($mysqli);
+        }
 
         self::$instances[$identifier] = new Db($mysqli);
 
@@ -185,6 +189,10 @@ class Db
 
     public static function getCredentials($identifier)
     {
+        if (is_array($identifier)) {
+            return self::sanitizeCredentialsArray($identifier);
+        }
+
         $identifierKey = $identifier === null ? self::KEYWORD_DEFAULT : $identifier;
 
         if (isset(self::$credentials[$identifierKey])) {
@@ -204,6 +212,39 @@ class Db
         }
 
         throw new Exception($identifier, "no connection settings found");
+    }
+
+    /**
+     * Get a credentials array from a connection string: user:pass@server/db
+     */
+    public static function toCredentials($connectionString)
+    {
+        $parts = explode('@', $connectionString);
+        if (count($parts) != 2) {
+            return null;
+        }
+
+        $userString = $parts[0];
+        $dbString = $parts[1];
+
+        $parts = explode(':', $userString);
+        $username = isset($parts[0]) ? $parts[0] : null;
+        $password = isset($parts[1]) ? $parts[1] : null;
+
+        $parts = explode('/', $dbString);
+        $host = isset($parts[0]) ? $parts[0] : null;
+        $database = isset($parts[1]) ? $parts[1] : null;
+
+        if ($host == null || $database == null) {
+            return null;
+        }
+
+        return [
+            "host" => $host,
+            "username" => $username,
+            "password" => $password,
+            "database" => $database
+        ];
     }
 
 
