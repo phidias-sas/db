@@ -123,6 +123,11 @@ class Iterator implements \Iterator
         $this->pointer     = $this->pointerStart;
         $this->currentRow  = $this->resultSet->fetch_assoc();
 
+        if ($this->currentRow == null) {
+            $this->lastSeenKeys = array();
+            return;
+        }
+
         foreach ($this->key as $index => $keyField) {
             $this->lastSeenKeys[$index] = $this->currentRow[$keyField];
         }
@@ -215,7 +220,7 @@ class Iterator implements \Iterator
         }
 
         if ($this->currentRow === null) {
-            $this->lastSeenKeys = null;
+            $this->lastSeenKeys = array();
         } else {
             foreach ($this->key as $index => $attribute) {
                 $this->lastSeenKeys[$index] = $this->currentRow[$attribute];
