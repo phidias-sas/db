@@ -991,8 +991,6 @@ class Collection
 
         /* Now add keys for active collection attributes */
         foreach ($this->attributes as $attributeName => $attributeSource) {
-
-
             if ( $this->schema->isKey($attributeName) || !($columnName = $this->schema->getColumn($attributeName)) ) {
                 continue;
             }
@@ -1009,14 +1007,16 @@ class Collection
     private function sanitizeAttributeValue($value, $attributeName)
     {
         //Null values on non-null columns
-        if ($value === null && !$this->schema->acceptsNull($attributeName)) {
+        if ($value === null) {
 
             //see if the collection defined a fixed attribute value via ->set()
             if (isset($this->updateValues[$attributeName]) && is_scalar($this->updateValues[$attributeName])) {
                 return $this->updateValues[$attributeName];
             }
 
-            return $this->schema->isAutoIncrement($attributeName) ? null : Db::KEYWORD_DEFAULT;
+            if ( !$this->schema->acceptsNull($attributeName) ) {
+                return $this->schema->isAutoIncrement($attributeName) ? null : Db::KEYWORD_DEFAULT;
+            }
         }
 
         if (is_scalar($value)) {
