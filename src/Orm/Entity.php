@@ -141,7 +141,7 @@ class Entity
 
                 if (is_a($value, "Phidias\Db\Orm\Entity")) {
                     $collection->attribute($attributeName, $value::collection($value));
-                } elseif (is_scalar($value) || is_null($value)) {
+                } elseif (is_scalar($value) || is_null($value) || $schema->isJson($attributeName)) {
                     $collection->attribute($attributeName);
                 }
             }

@@ -82,7 +82,7 @@ class Collection
         $this->filters       = array();
 
         $this->pile          = array();
-        $this->maxPileSize   = 5000;
+        $this->maxPileSize   = 2500;
         $this->insertCount   = 0;
 
         $this->updateValues  = array();
@@ -850,6 +850,13 @@ class Collection
             } else {
                 $iterator->attribute($attributeName, $fieldPrefix.$attributeName);
             }
+
+            // JSON! Add iterator filter to decode JSON values
+            if ($this->schema->isJson($attributeName)) {
+                $iterator->addFilter(function($obj) use ($attributeName) {
+                    $obj->$attributeName = json_decode($obj->$attributeName);
+                });
+            }
         }
 
         foreach ($this->filters as $filter) {
@@ -953,6 +960,12 @@ class Collection
                 $columnName = $attributeData["column"];
                 if (isset($lastRow[$columnName]) && $lastRow[$columnName] != DB::KEYWORD_DEFAULT) {
                     $entity->$attributeName = $lastRow[$columnName] == DB::KEYWORD_NULL ? null : $lastRow[$columnName];
+
+                    // JSON! decode newly saved value
+                    if ($this->schema->isJson($attributeName)) {
+                        $entity->$attributeName = json_decode($entity->$attributeName);
+                    }
+
                 } elseif ($this->schema->isAutoIncrement($attributeName)) {
                     $entity->$attributeName = $this->getLastInsertID();
                 }
@@ -1017,6 +1030,11 @@ class Collection
             if ( !$this->schema->acceptsNull($attributeName) ) {
                 return $this->schema->isAutoIncrement($attributeName) ? null : Db::KEYWORD_DEFAULT;
             }
+        }
+
+        // JSON! Encode incoming values for columns of type JSON
+        if ($this->schema->isJson($attributeName)) {
+            return $value === null ? null : json_encode($value);
         }
 
         if (is_scalar($value)) {

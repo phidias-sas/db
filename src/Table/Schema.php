@@ -295,6 +295,11 @@ class Schema
         return isset($this->attributes[$attributeName]["acceptNull"]) ? $this->attributes[$attributeName]["acceptNull"] : false;
     }
 
+    public function isJson($attributeName)
+    {
+        return isset($this->attributes[$attributeName]["type"]) ? $this->attributes[$attributeName]["type"] == 'json' : false;
+    }
+
     public function hasForeignKey($relationName)
     {
         return isset($this->foreignKeys[$relationName]);
