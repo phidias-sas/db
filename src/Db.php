@@ -381,7 +381,7 @@ class Db
      * returns 'D\'angelo'
      *
      */
-    private function sanitizeValue($value)
+    public function sanitizeValue($value)
     {
         if ($value === self::KEYWORD_NULL || is_null($value)) {
 

@@ -1234,4 +1234,57 @@ class Collection
         return $this;
     }
 
+    /*
+    MongoDb queries
+    $mongoCondition = json_decode(<<<STRING
+    {
+        "&or": [
+            {"firstname": {"&like": "ros%"}},
+            {
+                "&and": [
+                    {"firstname": {"&like": "san%"}},
+                    {"lastname": {"&like": "cor%"}}
+                ]
+            },
+            {"id": {"&in": [1, 2, 3]}}
+        ]
+    }
+    STRING);
+
+    $people->mongo($mongoCondition);
+    */
+    public function mongo($condition)
+    {
+        return $this->where($this->mongoToCondition($condition));
+    }
+
+    private function mongoToCondition($condition)
+    {
+        $keys = array_keys(get_object_vars($condition));
+        if (count($keys) !== 1) {
+            throw new \Exception("Invalid MongoDB condition ".json_encode($condition));
+        }
+
+        if ($keys[0] == "&or" || $keys[0] == "&and") {
+            $allConditions = [];
+            foreach ($condition->{$keys[0]} as $subcondition) {
+                $allConditions[] = "( " . $this->mongoToCondition($subcondition) . " )";
+            }
+
+            $glue = $keys[0] == "&or" ? " OR " : " AND ";
+            return implode($glue, $allConditions);
+        } else {
+            $attribute = $keys[0];
+
+            $subcondition = $condition->{$keys[0]};
+            $parts = array_keys(get_object_vars($subcondition));
+            $operator = $parts[0];
+            $value = $subcondition->$operator;
+
+            $sqlOp = Operator::getSQLOperator($operator);
+
+            return $attribute . " " . $sqlOp . " " . $this->db->sanitizeValue($value);
+        }
+    }    
+
 }
