@@ -449,7 +449,7 @@ class Collection
     // i.e. joins not relevant to the WHERE, GROUP BY or HAVING clauses of the final query
     private function _removeNonessentialJoins()
     {
-        $uses = implode(' ', array_merge($this->where, $this->groupBy, $this->having));
+        $uses = implode(' ', array_merge($this->where, $this->groupBy, $this->having, $this->orderBy));
 
         foreach (array_keys($this->joins) as $joinName) {
             if (strpos($uses, $joinName.'.') === false ) {  // this join is not used to filter the query
@@ -1275,8 +1275,22 @@ class Collection
             return implode($glue, $allConditions);
         } else {
             $attribute = $keys[0];
-
             $subcondition = $condition->{$keys[0]};
+
+            /* 
+            Si el atributo de la condicion tiene puntos 
+            i.e. 
+            {"algo.hola": {"&eq": "mundo"}}
+            
+            Se asume que el campo "algo" es de tipo JSON y que el condicional aplica a los datos que contiene
+            */
+            $parts = explode(".", $attribute, 2);
+            if (count($parts) == 2) {
+                $jsonCondition = new \stdClass;
+                $jsonCondition->{$parts[1]} = $subcondition;
+                return self::buildJsonCondition($parts[0], $jsonCondition);
+            }
+
             $parts = array_keys(get_object_vars($subcondition));
             $operator = $parts[0];
             $value = $subcondition->$operator;
@@ -1285,6 +1299,87 @@ class Collection
 
             return $attribute . " " . $sqlOp . " " . $this->db->sanitizeValue($value);
         }
-    }    
+    }
+
+
+    /*
+    MongoDb queries exclusivamente para campos tipo JSON
+    */
+    public function whereJson($attributeName, $jsonCondition)
+    {
+        return $this->where(self::buildJsonCondition($attributeName, $jsonCondition));
+    }
+
+    private static function buildJsonCondition($attributeName, $condition)
+    {
+        if (!$condition || !is_object($condition)) {
+            throw new \Exception("Invalid MongoDB Condition");
+        }
+
+        $attribute = array_keys(get_object_vars($condition))[0];
+        $value = $condition->$attribute;
+
+        if ($attribute == "&or" || $attribute == "&and") {
+            $conditions = [];
+            foreach ($value as $subcondition) {
+                $conditions[] = self::buildJsonCondition($attributeName, $subcondition);
+            }
+            $glue = $attribute == "&or" ? " OR " : " AND ";
+            return "(" . implode($glue, $conditions) . ")";
+        }
+
+        $operator = array_keys(get_object_vars($value))[0];
+        $argument = $value->$operator;
+
+        if (is_numeric($argument)) {
+            $argument = (int)$argument;
+        }
+
+        switch ($operator) {
+            case '&like':
+                return "JSON_SEARCH($attributeName, 'one', '$argument', NULL, '$.$attribute') IS NOT NULL";
+
+            case '&beginsWith':
+                return "JSON_SEARCH($attributeName, 'one', '$argument%', NULL, '$.$attribute') IS NOT NULL";
+
+            case '&endsWith':
+                return "JSON_SEARCH($attributeName, 'one', '%$argument', NULL, '$.$attribute') IS NOT NULL";
+
+            case '&contains':
+                return "JSON_SEARCH($attributeName, 'one', '%$argument%', NULL, '$.$attribute') IS NOT NULL";
+
+            case '&eq':
+                $parsedArgument = json_encode($argument);
+                return "JSON_CONTAINS($attributeName, '$parsedArgument', '$.$attribute')";
+
+            case '&neq':
+                $parsedArgument = json_encode($argument);
+                return "NOT JSON_CONTAINS($attributeName, '$parsedArgument', '$.$attribute')";
+
+            case '&gt':
+                return "JSON_EXTRACT($attributeName, '$.$attribute') > $argument";
+
+            case '&gte':
+                return "JSON_EXTRACT($attributeName, '$.$attribute') >= $argument";
+
+            case '&lt':
+                return "JSON_EXTRACT($attributeName, '$.$attribute') < $argument";
+
+            case '&lte':
+                return "JSON_EXTRACT($attributeName, '$.$attribute') <= $argument";
+
+            case '&hasAny':
+            case '&hasAll':
+                $targetValues = (array)$argument;
+                $conditions = [];
+                foreach ($targetValues as $targetValue) {
+                    $parsedValue = json_encode($targetValue);
+                    $conditions[] = "JSON_CONTAINS($attributeName, '$parsedValue', '$.$attribute')";
+                }
+
+                $glue = $operator == '&hasAny' ? ' OR ' : ' AND ';
+                return "(" . implode($glue, $conditions) . ")";
+        }
+    }
 
 }
