@@ -345,27 +345,33 @@ class Collection
 
     public function orderBy($attribute, $descending = false, $priorize = false)
     {
+        $orderString = $descending ? 'DESC' : 'ASC';
+        $parts = explode(".", $attribute);
+
+        // Check for JSON type field
+        if ($this->schema->isJson($parts[0])) {
+            $attributeName = array_shift($parts);
+            $jsonPath = implode(".", $parts);
+            return $this->order("JSON_EXTRACT($attributeName, '$.$jsonPath') $orderString", null, $priorize);
+        }
+
         $targetCollection = $this;
-        $parts            = explode(".", $attribute);
-        $attributeName    = array_pop($parts);
+        $parts = explode(".", $attribute);
+        $attributeName = array_pop($parts);
 
         foreach ($parts as $part) {
-
             if (!isset($targetCollection->joins[$part])) {
                 trigger_error("orderBy attribute '$attribute' not found", E_USER_WARNING);
                 return $this;
             }
 
             $targetCollection = $this->joins[$part]["collection"];
-
         }
 
-        if (!array_key_exists($attributeName, $targetCollection->attributes)) {
+        if ( !$targetCollection->schema->hasAttribute($attributeName) ) {
             trigger_error("orderBy attribute '$attribute' not found", E_USER_WARNING);
             return $this;
         }
-
-        $orderString = $descending ? 'DESC' : 'ASC';
 
         return $this->order("$attribute $orderString", null, $priorize);
     }
@@ -1277,18 +1283,20 @@ class Collection
             $attribute = $keys[0];
             $subcondition = $condition->{$keys[0]};
 
-            /* 
-            Si el atributo de la condicion tiene puntos 
-            i.e. 
+            /*
+            Si el atributo de la condicion tiene puntos
+            i.e.
             {"algo.hola": {"&eq": "mundo"}}
-            
+
             Se asume que el campo "algo" es de tipo JSON y que el condicional aplica a los datos que contiene
             */
             $parts = explode(".", $attribute, 2);
-            if (count($parts) == 2) {
+            $attributeName = $parts[0];
+
+            if ($this->schema->isJson($attributeName)) {
                 $jsonCondition = new \stdClass;
                 $jsonCondition->{$parts[1]} = $subcondition;
-                return self::buildJsonCondition($parts[0], $jsonCondition);
+                return self::buildJsonCondition($attributeName, $jsonCondition);
             }
 
             $parts = array_keys(get_object_vars($subcondition));
