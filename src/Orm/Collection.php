@@ -1179,6 +1179,80 @@ class Collection
         return $this;
     }
 
+    private function createClone()
+    {
+        return (new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions);
+    }
+
+    /* Reemplazo de whereObject, que soporta condiciones custom y mongo (+ json) */
+    public function applyCondition($condition)
+    {
+        // convert arrays into objects
+        if (is_array($condition) && isset($condition["op"])) {
+            $conditionObj        = new \stdClass;
+            $conditionObj->op    = $condition["op"];
+            $conditionObj->field = $condition["field"];
+            $conditionObj->args  = isset($condition["args"]) ? $condition["args"]: null;
+
+            $condition = $conditionObj;
+        }
+
+        if (!isset($condition->op)) {
+            throw new \Exception("Invalid condition ".json_encode($condition));
+        }
+
+        // Condiciones declaradas para la clase, mediante EntityClass::defineCondition
+        if (isset($this->customConditions[$condition->op])) {
+            $this->customConditions[$condition->op]($this, $condition->args);
+            return $this;
+        }        
+
+        $condition->field = isset($condition->field) ? $condition->field : null;
+        if ($condition->field) {
+            $parts = explode(".", $condition->field, 2);
+            if (count($parts) == 2) {
+                $condition->field = "JSON_EXTRACT(" . $parts[0] . ", '$." . $parts[1] . "')";
+            }
+        }
+
+
+        $hasConditions = false;
+
+        switch ($condition->op) {
+            case "or":
+                $newCollection = $this->createClone();
+                foreach ($condition->args as $subCondition) {
+                    $hasConditions = true;
+                    $newCollection->union($this->createClone()->applyCondition($subCondition));
+                }
+                $hasConditions && $this->intersect($newCollection);
+            break;
+
+            case "and":
+                foreach ($condition->args as $subCondition) {
+                    $hasConditions = true;
+                    $this->intersect($this->createClone()->applyCondition($subCondition));
+                }
+            break;
+
+            case "not":
+                $hasConditions = true;
+                $this->exclude($this->createClone()->applyCondition($condition->args));
+            break;
+
+            default:
+                $hasConditions = true;
+                \Phidias\Db\Orm\Condition::applyPrimitive($this, $condition);
+                break;
+        }
+
+        if (!$hasConditions) {
+            $this->where("0");
+        }
+
+        return $this;
+    }
+
     public function whereObject($condition)
     {
         // convert arrays into objects
