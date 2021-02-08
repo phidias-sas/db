@@ -1181,7 +1181,10 @@ class Collection
 
     private function createClone()
     {
-        return (new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions);
+        $clone = (new Collection($this->schema, $this->db));
+        $clone->setCustomConditions($this->customConditions);
+
+        return $clone;
     }
 
     /* Reemplazo de whereObject, que soporta condiciones custom y mongo (+ json) */
@@ -1205,7 +1208,7 @@ class Collection
         if (isset($this->customConditions[$condition->op])) {
             $this->customConditions[$condition->op]($this, $condition->args);
             return $this;
-        }        
+        }
 
         $condition->field = isset($condition->field) ? $condition->field : null;
         if ($condition->field) {
@@ -1223,7 +1226,12 @@ class Collection
                 $newCollection = $this->createClone();
                 foreach ($condition->args as $subCondition) {
                     $hasConditions = true;
-                    $newCollection->union($this->createClone()->applyCondition($subCondition));
+                    $subCollection = $this->createClone()->applyCondition($subCondition);
+                    if ($subCollection->joins) {
+                        $this->joins = array_merge($this->joins, $subCollection->joins);
+                    }
+
+                    $newCollection->union($subCollection);
                 }
                 $hasConditions && $this->intersect($newCollection);
             break;
@@ -1231,13 +1239,23 @@ class Collection
             case "and":
                 foreach ($condition->args as $subCondition) {
                     $hasConditions = true;
-                    $this->intersect($this->createClone()->applyCondition($subCondition));
+                    $subCollection = $this->createClone()->applyCondition($subCondition);
+                    if ($subCollection->joins) {
+                        $this->joins = array_merge($this->joins, $subCollection->joins);
+                    }
+
+                    $this->intersect($subCollection);
                 }
             break;
 
             case "not":
                 $hasConditions = true;
-                $this->exclude($this->createClone()->applyCondition($condition->args));
+                $subCollection = $this->createClone()->applyCondition($condition->args);
+                if ($subCollection->joins) {
+                    $this->joins = array_merge($this->joins, $subCollection->joins);
+                }
+
+                $this->exclude($subCollection);
             break;
 
             default:
