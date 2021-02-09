@@ -77,6 +77,14 @@ class Condition
             case 'string.same':
                 $collection->where("{$field} LIKE :args", ["args" => $args . "%"]);
                 break;
+
+            case 'boolean.true':
+                $collection->where("{$field} = 1");
+                break;
+
+            case 'boolean.false':
+                $collection->where("{$field} = 0");
+                break;
         }
 
         return $collection;

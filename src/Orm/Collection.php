@@ -1206,7 +1206,8 @@ class Collection
 
         // Condiciones declaradas para la clase, mediante EntityClass::defineCondition
         if (isset($this->customConditions[$condition->op])) {
-            $this->customConditions[$condition->op]($this, $condition->args);
+            $callable = $this->customConditions[$condition->op];
+            $callable($this, $condition->args);
             return $this;
         }
 
