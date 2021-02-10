@@ -40,6 +40,12 @@ class Condition
         }
 
         switch ($condition->op) {
+            case 'enum.anyOf':
+                if (is_array($args)) {
+                    $collection->match($field, $args);
+                }
+                break;
+
             case 'string.eq':
             case 'number.eq':
             case 'date.eq':
