@@ -1194,8 +1194,8 @@ class Collection
         if (is_array($condition) && isset($condition["op"])) {
             $conditionObj        = new \stdClass;
             $conditionObj->op    = $condition["op"];
-            $conditionObj->field = $condition["field"];
-            $conditionObj->args  = isset($condition["args"]) ? $condition["args"]: null;
+            $conditionObj->field = isset($condition["field"]) ? $condition["field"] : null;
+            $conditionObj->args  = isset($condition["args"]) ? $condition["args"] : null;
 
             $condition = $conditionObj;
         }
