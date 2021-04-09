@@ -329,7 +329,7 @@ class Entity
 
             if (isset($attributeData["type"]) && $attributeData["type"] == "uuid") {
                 $attributeData["type"]   = "varchar";
-                $attributeData["length"] = 13;
+                $attributeData["length"] = 32;
                 $attributeData["uuid"]   = true;
             }
 
