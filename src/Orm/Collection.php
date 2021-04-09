@@ -202,6 +202,10 @@ class Collection
         return $this;
     }
 
+    /*
+    !!!
+    match("foo", [])  ahora equivale a match("foo", null).  Ver abajo
+    */
     public function match($attributeName, $value = null, $mongoOperator = '&eq')
     {
         if (is_object($attributeName)) {
@@ -218,21 +222,39 @@ class Collection
             $this->where("$attributeName $queryOperator :value", array('value' => $value));
 
         } elseif (is_array($value)) {
-
             $targetArray = $this->normalizeArray($value);
 
             if ($targetArray) {
-
                 if ($mongoOperator === "&between") {
-
                     $this->where("$attributeName BETWEEN :low AND :high", array('low' => $targetArray[0], 'high' => $targetArray[1]));
                 } else {
                     $operator = $mongoOperator == '&nin' ? 'NOT IN' : 'IN';
                     $this->where("$attributeName $operator :value", array('value' => $targetArray));
                 }
-
+            } else { // NO TENER ESTE ELSE CAUSA UN BUG GRAVE!
+                $this->where("$attributeName IS null");
             }
+            /*
+            Si no se tiene, y se realiza un match() con un arreglo vacio
+            por ejemplo,
 
+            $expectedRecipientIds = [];   // digamos que esto tiene una lista de IDs de usuarios a quienes queremos enviar un email
+
+            Personas::collection()
+                ->allAttributes()
+                ->match("id", $expectedRecipientIds);
+
+            No deberia retornar a nadie!
+
+            Pero si $targetArray esta vacio, no se aplicaba ninguna condicion
+
+            y para el ejemplo anterior resultaria en
+            SELECT * FROM peronas;   ... TODOS LOS USUARIOS
+
+            Asi que ahora,
+            ->match("foo", [])  es equivalente a decir WHERE foo IS NULL (conceptualmente lo mismo que "WHERE foo IN ()" pero esto es un error de sintaxis SQL)
+
+            */
         } elseif ($value instanceof Collection) {
             return $this->inCollection($attributeName, $value);
         }
