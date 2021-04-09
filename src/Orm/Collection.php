@@ -231,8 +231,8 @@ class Collection
                     $operator = $mongoOperator == '&nin' ? 'NOT IN' : 'IN';
                     $this->where("$attributeName $operator :value", array('value' => $targetArray));
                 }
-            } else { // NO TENER ESTE ELSE CAUSA UN BUG GRAVE!
-                $this->where("$attributeName IS null");
+            } else { // ES MUY IMPORTANTE ESTABLECER ESTA CONDICION!
+                $this->where("0");
             }
             /*
             Si no se tiene, y se realiza un match() con un arreglo vacio
@@ -244,15 +244,11 @@ class Collection
                 ->allAttributes()
                 ->match("id", $expectedRecipientIds);
 
-            No deberia retornar a nadie!
-
-            Pero si $targetArray esta vacio, no se aplicaba ninguna condicion
-
-            y para el ejemplo anterior resultaria en
+            No se aplica ningun ->where y el query final es:
             SELECT * FROM peronas;   ... TODOS LOS USUARIOS
 
             Asi que ahora,
-            ->match("foo", [])  es equivalente a decir WHERE foo IS NULL (conceptualmente lo mismo que "WHERE foo IN ()" pero esto es un error de sintaxis SQL)
+            ->match("foo", []), que conceptualmente es foo in (),  es basicamente "WHERE 0"
 
             */
         } elseif ($value instanceof Collection) {
