@@ -231,9 +231,9 @@ class Collection
                     $operator = $mongoOperator == '&nin' ? 'NOT IN' : 'IN';
                     $this->where("$attributeName $operator :value", array('value' => $targetArray));
                 }
-            } else { // ES MUY IMPORTANTE ESTABLECER ESTA CONDICION!
-                $this->where("0");
-            }
+            } //else { // ES MUY IMPORTANTE ESTABLECER ESTA CONDICION!
+                //$this->where("0");
+            //}
             /*
             Si no se tiene, y se realiza un match() con un arreglo vacio
             por ejemplo,
