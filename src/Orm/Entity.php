@@ -1,4 +1,7 @@
-<?php namespace Phidias\Db\Orm;
+<?php
+
+namespace Phidias\Db\Orm;
+
 /**
  *
  * Orm Entity
@@ -111,6 +114,8 @@ class Entity
     protected static $schema;
     protected static $customConditions;
 
+    private $initialValues;
+
     public static function defineCondition($name, $callback)
     {
         if (!is_callable($callback)) {
@@ -175,14 +180,14 @@ class Entity
 
     public function setValues($values, $acceptedAttributes = null)
     {
+        $this->initialValues = new \stdClass;
+
         if (!is_array($values) && !is_object($values)) {
             return $this;
         }
 
         $schema = self::getSchema();
-
         foreach ($values as $attribute => $value) {
-
             if (!$schema->hasAttribute($attribute)) {
                 continue;
             }
@@ -191,13 +196,14 @@ class Entity
                 continue;
             }
 
-            if ($schema->hasForeignKey($attribute) && (is_array($value)||is_object($value)) && ($relatedEntity = self::getRelation($attribute))) {
+            if ($schema->hasForeignKey($attribute) && (is_array($value) || is_object($value)) && ($relatedEntity = self::getRelation($attribute))) {
                 $relatedEntityClassName = $relatedEntity["entity"];
                 $this->$attribute     = new $relatedEntityClassName;
                 $this->$attribute->setValues($value, $acceptedAttributes);
             } else {
                 $this->$attribute = $value;
             }
+            $this->initialValues->$attribute = $this->$attribute;
         }
 
         return $this;
@@ -205,9 +211,9 @@ class Entity
 
     public function fetchAll()
     {
-        $retval = clone($this);
+        $retval = clone ($this);
 
-        foreach (get_object_vars($retval) as $attributeName => $value ) {
+        foreach (get_object_vars($retval) as $attributeName => $value) {
             if (is_a($value, '\Phidias\Db\Iterator') || is_a($value, '\Phidias\Db\Orm\Entity')) {
                 $retval->$attributeName = $value->fetchAll();
             }
@@ -220,6 +226,47 @@ class Entity
     {
         self::collection($this)->save($this);
         return $this;
+    }
+
+    public function insert()
+    {
+        return self::collection($this)->insert($this);
+    }
+
+    public function update()
+    {
+        $schema     = self::getSchema();
+        $collection = self::collection($this);
+
+        foreach ($schema->getKeys() as $keyAttributeName) {
+            if (isset($this->initialValues->$keyAttributeName)) {
+                $collection->match($keyAttributeName, $this->initialValues->$keyAttributeName);
+            } else if (isset($this->$keyAttributeName)) {
+                $collection->match($keyAttributeName, $this->$keyAttributeName);
+            } else {
+                throw new \Exception("Cannot update: missing record keys");
+            }
+        }
+
+        $isChanged = false;
+        foreach ($schema->getAttributes() as $attributeName => $attributeDefinition) {
+            if (property_exists($this->initialValues, $attributeName)) {
+                if ($this->$attributeName != $this->initialValues->$attributeName) {
+                    $collection->set($attributeName, $this->$attributeName);
+                    $isChanged = true;
+                }
+            } else {
+                $collection->set($attributeName, $this->$attributeName);
+                $isChanged = true;
+            }
+        }
+
+        if (!$isChanged) {
+            // nothing to update
+            return 0;
+        }
+
+        return $collection->update();
     }
 
     public function delete()
@@ -239,7 +286,7 @@ class Entity
 
     /**
      * Return a collection with its search parameters matching currently set attributes
-    */
+     */
     public function find()
     {
         $retval = self::collection()->allAttributes();
@@ -257,7 +304,7 @@ class Entity
     /**
      * Treat currently set attributes as search keys and retrieve the first result.
      * Attempts to create the entity with the currently set attributes if no results are found
-    */
+     */
     public function obtain()
     {
         $match = $this->find()->first();
@@ -368,7 +415,6 @@ class Entity
                     "onDelete" => isset($attributeData["onDelete"]) ? $attributeData["onDelete"] : null,
                     "onUpdate" => isset($attributeData["onUpdate"]) ? $attributeData["onUpdate"] : null
                 );
-
             }
 
 
@@ -407,5 +453,4 @@ class Entity
 
         return $schemaObject;
     }
-
 }

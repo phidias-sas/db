@@ -1,4 +1,6 @@
-<?php namespace Phidias\Db\Orm;
+<?php
+
+namespace Phidias\Db\Orm;
 
 use Phidias\Db\Db;
 use Phidias\Db\Query;
@@ -215,12 +217,10 @@ class Collection
         if ($value === null) {
 
             $this->where("$attributeName IS null");
-
         } elseif (is_scalar($value)) {
 
             $queryOperator = Operator::getSQLOperator($mongoOperator);
             $this->where("$attributeName $queryOperator :value", array('value' => $value));
-
         } elseif (is_array($value)) {
             $targetArray = $this->normalizeArray($value);
 
@@ -281,10 +281,10 @@ class Collection
         $singleAttribute = $collection->relatedAttribute ? $collection->relatedAttribute : $collection->schema->getKeys()[0];
 
         $nestedSelect = $collection->getQuery()
-                                   ->mergeJoined()
-                                   ->fields($singleAttribute)
-                                   ->limit(null)
-                                   ->toSQL();
+            ->mergeJoined()
+            ->fields($singleAttribute)
+            ->limit(null)
+            ->toSQL();
 
         return $this->where("$attributeName IN ($nestedSelect)");
     }
@@ -296,7 +296,6 @@ class Collection
             if (isset($this->joins[$attributeName]) && is_object($value)) {
 
                 $this->joins[$attributeName]["collection"]->matchObject($value);
-
             } elseif ($this->schema->hasAttribute($attributeName)) {
 
                 $fullAttribute = $this->alias === null ? $attributeName : "$this->alias.$attributeName";
@@ -306,7 +305,6 @@ class Collection
                 } else {
                     $this->match($fullAttribute, $value);
                 }
-
             }
         }
 
@@ -331,15 +329,15 @@ class Collection
 
         // $words = explode(' ', trim($query));
         // No partir por espacios en cadenas entre comillas
-        $words = preg_split('/("[^"]*")|\h+/', $query, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE);
+        $words = preg_split('/("[^"]*")|\h+/', $query, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
 
         foreach ($words as $word) {
             if (!$word = trim($word)) {
                 continue;
             }
 
-            if (substr($word,0,1) == '"') {
-                $word = substr($word,1,-1);
+            if (substr($word, 0, 1) == '"') {
+                $word = substr($word, 1, -1);
             }
 
             $word = str_replace('%', '\%', $word);
@@ -386,7 +384,7 @@ class Collection
             $targetCollection = $this->joins[$part]["collection"];
         }
 
-        if ( !$targetCollection->schema->hasAttribute($attributeName) ) {
+        if (!$targetCollection->schema->hasAttribute($attributeName)) {
             trigger_error("orderBy attribute '$attribute' not found", E_USER_WARNING);
             return $this;
         }
@@ -453,7 +451,7 @@ class Collection
 
     private function _clone()
     {
-        $retval = clone($this);
+        $retval = clone ($this);
         foreach ($this->joins as $key => $join) {
             $this->joins[$key]["collection"] = $join["collection"]->_clone();
         }
@@ -476,7 +474,7 @@ class Collection
         $uses = implode(' ', array_merge($this->where, $this->groupBy, $this->having, $this->orderBy));
 
         foreach (array_keys($this->joins) as $joinName) {
-            if (strpos($uses, $joinName.'.') === false ) {  // this join is not used to filter the query
+            if (strpos($uses, $joinName . '.') === false) {  // this join is not used to filter the query
                 unset($this->joins[$joinName]);
             }
         }
@@ -501,7 +499,7 @@ class Collection
     public function offset($offset)
     {
         $this->offset = max(0, (int) $offset);
-        $this->page   = $this->limit === null ? 1 : ( 1 + floor($this->offset / $this->limit) );
+        $this->page   = $this->limit === null ? 1 : (1 + floor($this->offset / $this->limit));
 
         return $this;
     }
@@ -533,15 +531,15 @@ class Collection
         $newConditions = array();
 
         if ($this->where) {
-            $newConditions[] = '('.implode(' AND ', $this->where).')';
+            $newConditions[] = '(' . implode(' AND ', $this->where) . ')';
         }
 
         if ($collection->where) {
-            $newConditions[] = '('.implode(' AND ', $collection->where).')';
+            $newConditions[] = '(' . implode(' AND ', $collection->where) . ')';
         }
 
         if ($newConditions) {
-            $this->where = array('('.implode(' OR ', $newConditions).')');
+            $this->where = array('(' . implode(' OR ', $newConditions) . ')');
         }
 
         return $this;
@@ -555,11 +553,11 @@ class Collection
         $newConditions = array();
 
         if ($this->where) {
-            $newConditions[] = '('.implode(' AND ', $this->where).')';
+            $newConditions[] = '(' . implode(' AND ', $this->where) . ')';
         }
 
         if ($collection->where) {
-            $newConditions[] = '('.implode(' AND ', $collection->where).')';
+            $newConditions[] = '(' . implode(' AND ', $collection->where) . ')';
         }
 
         $this->where = $newConditions;
@@ -575,11 +573,11 @@ class Collection
         $newConditions = array();
 
         if ($this->where) {
-            $newConditions[] = '('.implode(' AND ', $this->where).')';
+            $newConditions[] = '(' . implode(' AND ', $this->where) . ')';
         }
 
         if ($collection->where) {
-            $newConditions[] = 'NOT ('.implode(' AND ', $collection->where).')';
+            $newConditions[] = 'NOT (' . implode(' AND ', $collection->where) . ')';
         }
 
         $this->where = $newConditions;
@@ -644,21 +642,17 @@ class Collection
 
                 $relatedAttribute        = $collection->relatedAttribute;
                 $relatedAttributeIsLocal = true;
-
             } elseif ($collection->schema->hasForeignKey($collection->relatedAttribute)) {
 
                 $relatedAttribute        = $collection->relatedAttribute;
                 $relatedAttributeIsLocal = false;
-
             } elseif ($collection->schema->hasAttribute($collection->relatedAttribute)) { //last resort: the foreign schema has an attribute with the given name
 
                 $relatedAttribute        = $collection->relatedAttribute;
                 $relatedAttributeIsLocal = false;
-
             } else {
                 trigger_error("foreign attribute '{$collection->relatedAttribute}' not found", E_USER_ERROR);
             }
-
         }
 
         //when there is a single relation between the tables
@@ -679,7 +673,6 @@ class Collection
                     $relatedAttributeIsLocal = false;
                 }
             }
-
         }
 
         //no relation could be determined
@@ -696,7 +689,6 @@ class Collection
             } else {
                 trigger_error("foreign attribute '$relatedAttribute' not found", E_USER_ERROR);
             }
-
         }
 
         $this->joins[$attributeName] = array(
@@ -716,7 +708,7 @@ class Collection
         $retval     = array();
 
         foreach ($this->schema->getAttributes() as $attributeName => $attributeData) {
-            $retval[$fieldPrefix.$attributeName] = '`'.$tableAlias.'`.`'.$attributeData['column'].'`';
+            $retval[$fieldPrefix . $attributeName] = '`' . $tableAlias . '`.`' . $attributeData['column'] . '`';
         }
 
         foreach ($this->joins as $name => $joinData) {
@@ -726,7 +718,7 @@ class Collection
         //Custom attributes
         foreach ($this->attributes as $attributeName => $attributeSource) {
             if ($attributeSource !== null && !$this->schema->hasAttribute($attributeName)) {
-                $retval[$fieldPrefix.$attributeName] = '('.$this->translate($attributeSource, $retval).')';
+                $retval[$fieldPrefix . $attributeName] = '(' . $this->translate($attributeSource, $retval) . ')';
             }
         }
 
@@ -778,7 +770,7 @@ class Collection
 
         if ($forceSelectKeys) {
             foreach ($this->schema->getKeys() as $keyAttributeName) {
-                $query->field($fieldPrefix.$keyAttributeName, "`{$tableAlias}`.".$this->schema->getColumn($keyAttributeName));
+                $query->field($fieldPrefix . $keyAttributeName, "`{$tableAlias}`." . $this->schema->getColumn($keyAttributeName));
             }
         }
 
@@ -790,12 +782,12 @@ class Collection
             }
 
             if ($attributeOrigin === null) {
-                $attributeOrigin = "`{$tableAlias}`.".$this->schema->getColumn($attributeName);
+                $attributeOrigin = "`{$tableAlias}`." . $this->schema->getColumn($attributeName);
             } else {
                 $attributeOrigin = $this->translate($attributeOrigin, $aliasMap);
             }
 
-            $query->field($fieldPrefix.$attributeName, $attributeOrigin);
+            $query->field($fieldPrefix . $attributeName, $attributeOrigin);
         }
 
         //Join with nested collections
@@ -818,7 +810,7 @@ class Collection
                 $conditions[] = $this->translate($condition, $aliasMap);
             }
 
-            $nestedCollection        = clone($joinData["collection"]);
+            $nestedCollection        = clone ($joinData["collection"]);
             $nestedCollection->where = array();
             $nestedQuery             = $nestedCollection->getQuery($aliasMap, $forceSelectKeys);
 
@@ -863,7 +855,7 @@ class Collection
 
         $keyFields = array();
         foreach ($this->schema->getKeys() as $attributeName) {
-            $keyFields[] = $fieldPrefix.$attributeName;
+            $keyFields[] = $fieldPrefix . $attributeName;
         }
 
         $iterator = new Iterator($keyFields, $this->className, $this->hasOneElement);
@@ -872,12 +864,12 @@ class Collection
             if (isset($this->joins[$attributeName])) {
                 $iterator->attribute($attributeName, $this->joins[$attributeName]["collection"]->buildIterator());
             } else {
-                $iterator->attribute($attributeName, $fieldPrefix.$attributeName);
+                $iterator->attribute($attributeName, $fieldPrefix . $attributeName);
             }
 
             // JSON! Add iterator filter to decode JSON values
             if ($this->schema->isJson($attributeName)) {
-                $iterator->addFilter(function($obj) use ($attributeName) {
+                $iterator->addFilter(function ($obj) use ($attributeName) {
                     $obj->$attributeName = json_decode($obj->$attributeName);
                 });
             }
@@ -916,13 +908,12 @@ class Collection
                     $this->match($keyAttributeName, $targetKey[$index]);
                 }
             }
-
         }
 
         $result = $this->find()->first();
 
         if ($result === null) {
-            throw new Exception\EntityNotFound($targetKey, "No records for key ".json_encode($targetKey));
+            throw new Exception\EntityNotFound($targetKey, "No records for key " . json_encode($targetKey));
         }
 
         return $result;
@@ -962,48 +953,6 @@ class Collection
         $this->pile = array();
     }
 
-    public function save(&$entity = null)
-    {
-        if ($entity !== null) {
-            $this->add($entity);
-        }
-
-        if (!count($this->pile)) {
-            return $this->insertCount;
-        }
-
-        $columnNames = array_keys($this->pile[0]);
-
-        $this->insertCount += $this->db->insertUpdate($this->schema->getTable(), $columnNames, $this->pile, $this->schema->getAutoIncrementColumns());
-
-        if ($entity !== null) {
-
-            $lastRow = end($this->pile);
-
-            foreach ($this->schema->getAttributes() as $attributeName => $attributeData) {
-                $columnName = $attributeData["column"];
-                if (isset($lastRow[$columnName]) && $lastRow[$columnName] != DB::KEYWORD_DEFAULT) {
-                    $entity->$attributeName = $lastRow[$columnName] == DB::KEYWORD_NULL ? null : $lastRow[$columnName];
-
-                    // JSON! decode newly saved value
-                    if ($this->schema->isJson($attributeName)) {
-                        $entity->$attributeName = json_decode($entity->$attributeName);
-                    }
-
-                } elseif ($this->schema->isAutoIncrement($attributeName)) {
-                    $entity->$attributeName = $this->getLastInsertID();
-                }
-            }
-
-        }
-
-        $this->clear();
-
-        return $this->insertCount;
-    }
-
-
-
     /* Return an insertable row (array with column names as key) representing the given object */
     private function toRow($object)
     {
@@ -1023,18 +972,16 @@ class Collection
 
             $columnName       = $this->schema->getColumn($keyName);
             $row[$columnName] = $this->sanitizeAttributeValue($keyValue, $keyName);
-
         }
 
         /* Now add keys for active collection attributes */
         foreach ($this->attributes as $attributeName => $attributeSource) {
-            if ( $this->schema->isKey($attributeName) || !($columnName = $this->schema->getColumn($attributeName)) ) {
+            if ($this->schema->isKey($attributeName) || !($columnName = $this->schema->getColumn($attributeName))) {
                 continue;
             }
 
             $attributeValue   = isset($object->$attributeName) ? $object->$attributeName : $attributeSource;
             $row[$columnName] = $this->sanitizeAttributeValue($attributeValue, $attributeName);
-
         }
 
         return $row;
@@ -1051,7 +998,7 @@ class Collection
                 return $this->updateValues[$attributeName];
             }
 
-            if ( !$this->schema->acceptsNull($attributeName) ) {
+            if (!$this->schema->acceptsNull($attributeName)) {
                 return $this->schema->isAutoIncrement($attributeName) ? null : Db::KEYWORD_DEFAULT;
             }
         }
@@ -1083,7 +1030,6 @@ class Collection
                     return $value->$keyName;
                 }
             }
-
         }
 
         return Db::KEYWORD_DEFAULT;
@@ -1094,6 +1040,26 @@ class Collection
         $this->updateValues[$attributeName] = $attributeValue;
 
         return $this;
+    }
+
+    public function insert($entity)
+    {
+        $targetRow = $this->toRow($entity);
+        $targetColumnNames = array_keys($targetRow);
+        $table = $this->schema->getTable();
+
+        $result = $this->db->insert($table, $targetColumnNames, [$targetRow]);
+
+        // De este proceso pueden producirse nuevos ids (uuid o autoincrement)
+        // Actualizar $entity con esos valores
+        foreach ($targetRow as $attributeName => $attributeValue) {
+            $finalValue = ($attributeValue == DB::KEYWORD_DEFAULT || $attributeValue == DB::KEYWORD_NULL) ? null : $attributeValue;
+            if ($entity->$attributeName != $finalValue) {
+                $entity->$attributeName = $finalValue;
+            }
+        }
+
+        return $result;
     }
 
     public function update()
@@ -1123,7 +1089,7 @@ class Collection
 
         $tableName  = $this->schema->getTable();
         $tableAlias = $this->alias === NULL ? $tableName : $this->alias;
-        $table      = $tableName.' `'.$tableAlias.'`';
+        $table      = $tableName . ' `' . $tableAlias . '`';
 
         foreach ($this->joins as $name => $join) {
 
@@ -1135,7 +1101,7 @@ class Collection
                 $joinConditions[] = $this->translate($condition, $aliasMap);
             }
 
-            $table .= " JOIN $joinTable `$joinAlias` ON ".implode(" AND ", $joinConditions);
+            $table .= " JOIN $joinTable `$joinAlias` ON " . implode(" AND ", $joinConditions);
         }
 
         return $this->db->update($table, $targetValues, implode(' AND ', $updateConditions));
@@ -1160,6 +1126,45 @@ class Collection
         return $this->db->delete($this->schema->getTable(), $deleteCondition);
     }
 
+    public function save(&$entity = null)
+    {
+        if ($entity !== null) {
+            $this->add($entity);
+        }
+
+        if (!count($this->pile)) {
+            return $this->insertCount;
+        }
+
+        $columnNames = array_keys($this->pile[0]);
+
+        $this->insertCount += $this->db->insertUpdate($this->schema->getTable(), $columnNames, $this->pile, $this->schema->getAutoIncrementColumns());
+
+        if ($entity !== null) {
+
+            $lastRow = end($this->pile);
+
+            foreach ($this->schema->getAttributes() as $attributeName => $attributeData) {
+                $columnName = $attributeData["column"];
+                if (isset($lastRow[$columnName]) && $lastRow[$columnName] != DB::KEYWORD_DEFAULT) {
+                    $entity->$attributeName = $lastRow[$columnName] == DB::KEYWORD_NULL ? null : $lastRow[$columnName];
+
+                    // JSON! decode newly saved value
+                    if ($this->schema->isJson($attributeName)) {
+                        $entity->$attributeName = json_decode($entity->$attributeName);
+                    }
+                } elseif ($this->schema->isAutoIncrement($attributeName)) {
+                    $entity->$attributeName = $this->getLastInsertID();
+                }
+            }
+        }
+
+        $this->clear();
+
+        return $this->insertCount;
+    }
+
+
     public function getLastInsertID()
     {
         return $this->db->getLastInsertID();
@@ -1173,7 +1178,7 @@ class Collection
 
     public function getUniqueId()
     {
-        $uuid = round( microtime(true) * 10000 ) - 14244454700000 + self::$uniqueSequence++;
+        $uuid = round(microtime(true) * 10000) - 14244454700000 + self::$uniqueSequence++;
         return base_convert($uuid, 10, 36) . self::getRandomChar() . self::getRandomChar() . self::getRandomChar();
     }
 
@@ -1185,7 +1190,7 @@ class Collection
 
     public function getUniqueIdTimestamp($uuid)
     {
-        return floor( base_convert( substr($uuid, 0, -3), 36, 10) / 10000 ) + 1424445470;
+        return floor(base_convert(substr($uuid, 0, -3), 36, 10) / 10000) + 1424445470;
 
         //for MySQL:
         //FROM_UNIXTIME(FLOOR( CONV(id, 36, 10) / 10000 ) + 1424445470) as timestamp
@@ -1219,7 +1224,7 @@ class Collection
         }
 
         if (!isset($condition->op)) {
-            throw new \Exception("Invalid condition ".json_encode($condition));
+            throw new \Exception("Invalid condition " . json_encode($condition));
         }
 
         // Condiciones declaradas para la clase, mediante EntityClass::defineCondition
@@ -1253,7 +1258,7 @@ class Collection
                     $newCollection->union($subCollection);
                 }
                 $hasConditions && $this->intersect($newCollection);
-            break;
+                break;
 
             case "and":
                 foreach ($condition->args as $subCondition) {
@@ -1265,7 +1270,7 @@ class Collection
 
                     $this->intersect($subCollection);
                 }
-            break;
+                break;
 
             case "not":
                 $hasConditions = true;
@@ -1275,7 +1280,7 @@ class Collection
                 }
 
                 $this->exclude($subCollection);
-            break;
+                break;
 
             default:
                 $hasConditions = true;
@@ -1296,13 +1301,13 @@ class Collection
         if (is_array($condition) && isset($condition["type"])) {
             $conditionObj        = new \stdClass;
             $conditionObj->type  = $condition["type"];
-            $conditionObj->model = isset($condition["model"]) ? $condition["model"]: null;
+            $conditionObj->model = isset($condition["model"]) ? $condition["model"] : null;
 
             $condition = $conditionObj;
         }
 
         if (!isset($condition->type)) {
-            throw new \Exception("Invalid condition ".json_encode($condition));
+            throw new \Exception("Invalid condition " . json_encode($condition));
         }
 
         $hasConditions = false;
@@ -1315,33 +1320,33 @@ class Collection
                     $newCollection->union((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($subCondition));
                 }
                 $hasConditions && $this->intersect($newCollection);
-            break;
+                break;
 
             case "and":
                 foreach ($condition->model as $subCondition) {
                     $hasConditions = true;
                     $this->intersect((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($subCondition));
                 }
-            break;
+                break;
 
             case "not":
                 $hasConditions = true;
                 $this->exclude((new Collection($this->schema, $this->db))->setCustomConditions($this->customConditions)->whereObject($condition->model));
-            break;
+                break;
 
             case "attributes":
                 if (!empty($condition->model)) {
                     $hasConditions = true;
                     $this->match($condition->model);
                 }
-            break;
+                break;
 
             default:
                 if (isset($this->customConditions[$condition->type])) {
                     $hasConditions = true;
                     $this->customConditions[$condition->type]($this, $condition->model);
                 }
-            break;
+                break;
         }
 
         if (!$hasConditions) {
@@ -1379,7 +1384,7 @@ class Collection
     {
         $keys = array_keys(get_object_vars($condition));
         if (count($keys) !== 1) {
-            throw new \Exception("Invalid MongoDB condition ".json_encode($condition));
+            throw new \Exception("Invalid MongoDB condition " . json_encode($condition));
         }
 
         if ($keys[0] == "&or" || $keys[0] == "&and") {
@@ -1500,5 +1505,4 @@ class Collection
                 return "(" . implode($glue, $conditions) . ")";
         }
     }
-
 }
