@@ -250,7 +250,7 @@ class Entity
 
         $isChanged = false;
         foreach ($schema->getAttributes() as $attributeName => $attributeDefinition) {
-            if (property_exists($this->initialValues, $attributeName)) {
+            if ($this->initialValues && property_exists($this->initialValues, $attributeName)) {
                 if ($this->$attributeName != $this->initialValues->$attributeName) {
                     $collection->set($attributeName, $this->$attributeName);
                     $isChanged = true;
