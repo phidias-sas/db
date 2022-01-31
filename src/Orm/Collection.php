@@ -1078,7 +1078,8 @@ class Collection
 
         $targetValues = array();
         foreach ($this->updateValues as $attributeName => $targetValue) {
-            $targetValues[$this->translate($attributeName, $aliasMap)] = $targetValue;
+            // $targetValues[$this->translate($attributeName, $aliasMap)] = $targetValue;
+            $targetValues[$this->translate($attributeName, $aliasMap)] = $this->sanitizeAttributeValue($targetValue, $attributeName);
         }
 
         $updateConditions = array();
