@@ -277,6 +277,11 @@ class Db
         $this->mysqli = $mysqli;
     }
 
+    public function close()
+    {
+        $this->mysqli->close();
+    }
+
     public function beginTransaction()
     {
         $this->mysqli->autocommit(false);
