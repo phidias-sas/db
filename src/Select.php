@@ -485,10 +485,8 @@ class Select
         }
 
         // SELECT COLUMNS
-        if (isset($objSelect->iterator->key) && isset($objSelect->iterator->output)) {
-            $this->output(
-                $this->parseOutput(new Loop($objSelect->iterator->key, $objSelect->iterator->output))
-            );
+        if (isset($objSelect->output)) {
+            $this->output($this->parseOutput($objSelect->output));
         } else {
             if (!isset($objSelect->columns) || !is_array($objSelect->columns)) {
                 throw new \Exception("'columns' must be an array");
@@ -561,7 +559,12 @@ class Select
 
     private function parseOutput($objOutput)
     {
-        if ($objOutput instanceof Loop) {
+        if (isset($objOutput->key) && isset($objOutput->output)) {
+            return new Loop(
+                $objOutput->key,
+                $this->parseOutput($objOutput->output)
+            );
+        } else if ($objOutput instanceof Loop) {
             return new Loop(
                 $objOutput->key,
                 $this->parseOutput($objOutput->output)
