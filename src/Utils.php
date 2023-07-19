@@ -1,6 +1,6 @@
 <?php
 
-namespace Phidias\Db\Select;
+namespace Phidias\Db;
 
 class Utils
 {
@@ -48,7 +48,7 @@ class Utils
                 return substr($value, 1, -1);
             }
 
-            return "'" . self::escape($value) . "'";
+            return self::escape($value);
         } elseif (is_bool($value)) {
             return $value ? 1 : 0;
         } elseif (is_array($value)) {

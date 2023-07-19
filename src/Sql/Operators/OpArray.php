@@ -1,6 +1,6 @@
 <?php
 
-namespace Phidias\Db\Select\Operators;
+namespace Phidias\Db\Sql\Operators;
 
 class OpArray
 {

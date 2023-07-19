@@ -1,6 +1,6 @@
 <?php
 
-namespace Phidias\Db\Select;
+namespace Phidias\Db\Result;
 
 class Loop
 {
@@ -16,6 +16,19 @@ class Loop
     {
         $this->key = $key;
         $this->output = $output;
+    }
+
+    public function fetch($mysqli_result)
+    {
+        $retval = [];
+        $row = $mysqli_result->fetch_assoc();
+
+        if (!$row) { // return any falsy value
+            return $row;
+        }
+
+        $this->processRow($row, $retval);
+        return $this->unhash($retval)[0];
     }
 
     public function fetch_all($mysqli_result)

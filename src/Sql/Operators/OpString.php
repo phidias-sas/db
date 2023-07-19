@@ -1,8 +1,8 @@
 <?php
 
-namespace Phidias\Db\Select\Operators;
+namespace Phidias\Db\Sql\Operators;
 
-use Phidias\Db\Select\Utils;
+use Phidias\Db\Utils;
 
 class OpString
 {

@@ -15,7 +15,7 @@ class Db
     private static $identifierCallbacks = array();
     private static $instances           = array();
 
-    private $mysqli;
+    public $mysqli;
 
     /**
      * Configure database access credentials

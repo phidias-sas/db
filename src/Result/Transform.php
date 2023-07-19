@@ -1,6 +1,6 @@
 <?php
 
-namespace Phidias\Db\Select;
+namespace Phidias\Db\Result;
 
 class Transform
 {

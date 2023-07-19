@@ -1,6 +1,6 @@
 <?php
 
-namespace Phidias\Db\Select;
+namespace Phidias\Db\Sql;
 
 class Vm extends \Phidias\Json\Vm
 {
@@ -23,36 +23,36 @@ class Vm extends \Phidias\Json\Vm
         $this->defineOperator('boolean.isFalse', [$className, 'op_false']);
         $this->defineOperator('boolean.eq', [$className, 'op_bool_eq']);
 
-        $this->defineOperator('number.eq', ['\Phidias\Db\Select\Operators\OpNumber', 'eq']);
-        $this->defineOperator('number.gt', ['\Phidias\Db\Select\Operators\OpNumber', 'gt']);
-        $this->defineOperator('number.gte', ['\Phidias\Db\Select\Operators\OpNumber', 'gte']);
-        $this->defineOperator('number.lt', ['\Phidias\Db\Select\Operators\OpNumber', 'lt']);
-        $this->defineOperator('number.lte', ['\Phidias\Db\Select\Operators\OpNumber', 'lte']);
-        $this->defineOperator('number.between', ['\Phidias\Db\Select\Operators\OpNumber', 'between']);
+        $this->defineOperator('number.eq', ['\Phidias\Db\Sql\Operators\OpNumber', 'eq']);
+        $this->defineOperator('number.gt', ['\Phidias\Db\Sql\Operators\OpNumber', 'gt']);
+        $this->defineOperator('number.gte', ['\Phidias\Db\Sql\Operators\OpNumber', 'gte']);
+        $this->defineOperator('number.lt', ['\Phidias\Db\Sql\Operators\OpNumber', 'lt']);
+        $this->defineOperator('number.lte', ['\Phidias\Db\Sql\Operators\OpNumber', 'lte']);
+        $this->defineOperator('number.between', ['\Phidias\Db\Sql\Operators\OpNumber', 'between']);
 
-        $this->defineOperator('string.same', ['\Phidias\Db\Select\Operators\OpString', 'same']);
-        $this->defineOperator('string.like', ['\Phidias\Db\Select\Operators\OpString', 'like']);
-        $this->defineOperator('string.eq', ['\Phidias\Db\Select\Operators\OpString', 'eq']);
-        $this->defineOperator('string.neq', ['\Phidias\Db\Select\Operators\OpString', 'neq']);
-        $this->defineOperator('string.includes', ['\Phidias\Db\Select\Operators\OpString', 'includes']);
-        $this->defineOperator('string.startsWith', ['\Phidias\Db\Select\Operators\OpString', 'startsWith']);
-        $this->defineOperator('string.endsWith', ['\Phidias\Db\Select\Operators\OpString', 'endsWith']);
-        $this->defineOperator('string.empty', ['\Phidias\Db\Select\Operators\OpString', 'isEmpty']);
-        $this->defineOperator('string.nempty', ['\Phidias\Db\Select\Operators\OpString', 'nempty']);
+        $this->defineOperator('string.same', ['\Phidias\Db\Sql\Operators\OpString', 'same']);
+        $this->defineOperator('string.like', ['\Phidias\Db\Sql\Operators\OpString', 'like']);
+        $this->defineOperator('string.eq', ['\Phidias\Db\Sql\Operators\OpString', 'eq']);
+        $this->defineOperator('string.neq', ['\Phidias\Db\Sql\Operators\OpString', 'neq']);
+        $this->defineOperator('string.includes', ['\Phidias\Db\Sql\Operators\OpString', 'includes']);
+        $this->defineOperator('string.startsWith', ['\Phidias\Db\Sql\Operators\OpString', 'startsWith']);
+        $this->defineOperator('string.endsWith', ['\Phidias\Db\Sql\Operators\OpString', 'endsWith']);
+        $this->defineOperator('string.empty', ['\Phidias\Db\Sql\Operators\OpString', 'isEmpty']);
+        $this->defineOperator('string.nempty', ['\Phidias\Db\Sql\Operators\OpString', 'nempty']);
 
         $this->defineOperator('enum.any', [$className, 'enum_any']);
 
-        $this->defineOperator('array.eq', ['\Phidias\Db\Select\Operators\OpArray', 'eq']);
-        $this->defineOperator('array.hasAny', ['\Phidias\Db\Select\Operators\OpArray', 'hasAny']);
-        $this->defineOperator('array.hasAll', ['\Phidias\Db\Select\Operators\OpArray', 'hasAll']);
+        $this->defineOperator('array.eq', ['\Phidias\Db\Sql\Operators\OpArray', 'eq']);
+        $this->defineOperator('array.hasAny', ['\Phidias\Db\Sql\Operators\OpArray', 'hasAny']);
+        $this->defineOperator('array.hasAll', ['\Phidias\Db\Sql\Operators\OpArray', 'hasAll']);
 
-        $this->defineOperator('date.between', ['\Phidias\Db\Select\Operators\OpDate', 'between']);
-        $this->defineOperator('date.eq', ['\Phidias\Db\Select\Operators\OpDate', 'eq']);
-        $this->defineOperator('date.neq', ['\Phidias\Db\Select\Operators\OpDate', 'neq']);
-        $this->defineOperator('date.gt', ['\Phidias\Db\Select\Operators\OpDate', 'gt']);
-        $this->defineOperator('date.gte', ['\Phidias\Db\Select\Operators\OpDate', 'gte']);
-        $this->defineOperator('date.lt', ['\Phidias\Db\Select\Operators\OpDate', 'lt']);
-        $this->defineOperator('date.lte', ['\Phidias\Db\Select\Operators\OpDate', 'lte']);
+        $this->defineOperator('date.between', ['\Phidias\Db\Sql\Operators\OpDate', 'between']);
+        $this->defineOperator('date.eq', ['\Phidias\Db\Sql\Operators\OpDate', 'eq']);
+        $this->defineOperator('date.neq', ['\Phidias\Db\Sql\Operators\OpDate', 'neq']);
+        $this->defineOperator('date.gt', ['\Phidias\Db\Sql\Operators\OpDate', 'gt']);
+        $this->defineOperator('date.gte', ['\Phidias\Db\Sql\Operators\OpDate', 'gte']);
+        $this->defineOperator('date.lt', ['\Phidias\Db\Sql\Operators\OpDate', 'lt']);
+        $this->defineOperator('date.lte', ['\Phidias\Db\Sql\Operators\OpDate', 'lte']);
 
         $this->translationFunction = null;
     }

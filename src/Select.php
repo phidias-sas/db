@@ -63,10 +63,9 @@ $q = new Select()                                                           SELE
 
 namespace Phidias\Db;
 
-use Phidias\Db\Select\Loop;
-use Phidias\Db\Select\Transform;
-use Phidias\Db\Select\Utils;
-use Phidias\Db\Select\Vm;
+use Phidias\Db\Sql\Vm;
+use Phidias\Db\Result\Loop;
+use Phidias\Db\Result\Transform;
 
 class Select
 {
@@ -396,13 +395,26 @@ class Select
         return $retval;
     }
 
+    public function fetch($mysqli_result)
+    {
+        if ($this->outputIterator) {
+            return $this->outputIterator->fetch($mysqli_result);
+        }
+
+        return $mysqli_result->fetch_object();
+    }
+
     public function fetch_all($mysqli_result)
     {
         if ($this->outputIterator) {
             return $this->outputIterator->fetch_all($mysqli_result);
         }
 
-        return $mysqli_result->fetch_all(MYSQLI_ASSOC);
+        $retval = [];
+        while ($obj = $mysqli_result->fetch_object()) {
+            $retval[] = $obj;
+        }
+        return $retval;
     }
 
 
