@@ -2,6 +2,8 @@
 
 namespace Phidias\Db\Sql;
 
+use Phidias\Db\Utils;
+
 class Vm extends \Phidias\Json\Vm
 {
     public $operators;
